@@ -1,0 +1,84 @@
+version: '3.8'
+
+# Backend EC2 인스턴스 전용 구성
+# 이 파일은 Backend EC2에서만 실행됩니다.
+
+services:
+  # Django Backend (Gunicorn)
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: triplan-backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ../../backend:/app
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+      - export_data:/app/exports
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # WebSocket Server (Daphne)
+  websocket:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: triplan-websocket
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ../../backend:/app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: triplan-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  static_data:
+  media_data:
+  export_data:

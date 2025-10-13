@@ -1,0 +1,104 @@
+version: '3.8'
+
+# Database + Airflow EC2 인스턴스 전용 구성
+# 이 파일은 Database/Airflow EC2에서만 실행됩니다.
+
+services:
+  # PostgreSQL with pgvector
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: triplan-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-triplan}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ../../database/pgvector-setup.sql:/docker-entrypoint-initdb.d/02-pgvector-setup.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triplan-network
+
+  # Airflow PostgreSQL (별도)
+  airflow-postgres:
+    image: postgres:15-alpine
+    container_name: triplan-airflow-db
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # Airflow Webserver
+  airflow-webserver:
+    build:
+      context: ../../airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-webserver
+    command: webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
+      - AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
+      - AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
+    volumes:
+      - ../../airflow/dags:/opt/airflow/dags
+      - ../../airflow/logs:/opt/airflow/logs
+      - ../../airflow/plugins:/opt/airflow/plugins
+      - airflow_data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - airflow-postgres
+      - postgres
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # Airflow Scheduler
+  airflow-scheduler:
+    build:
+      context: ../../airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-scheduler
+    command: scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ../../airflow/dags:/opt/airflow/dags
+      - ../../airflow/logs:/opt/airflow/logs
+      - ../../airflow/plugins:/opt/airflow/plugins
+      - airflow_data:/opt/airflow/data
+    depends_on:
+      - airflow-postgres
+      - postgres
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  airflow_postgres_data:
+  airflow_data:

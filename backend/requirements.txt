@@ -1,0 +1,54 @@
+# Django Core
+Django==4.2.9
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-environ==0.11.2
+
+# Database
+psycopg2-binary==2.9.9
+pgvector==0.2.4
+
+# WebSocket & Channels
+channels==4.0.0
+channels-redis==4.1.0
+daphne==4.0.0
+
+# Redis
+redis==5.0.1
+
+# Authentication & Authorization
+djangorestframework-simplejwt==5.3.1
+django-allauth==0.59.0
+
+# AI & ML
+langchain==0.1.0
+langchain-openai==0.0.2
+langgraph==0.0.20
+openai==1.7.2
+sentence-transformers==2.2.2
+transformers==4.36.2
+torch==2.1.2
+
+# Data Processing
+numpy==1.26.3
+pandas==2.1.4
+
+# API & HTTP
+requests==2.31.0
+httpx==0.26.0
+
+# File Processing
+Pillow==10.2.0
+reportlab==4.0.9
+python-docx==1.1.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3.post1
+celery==5.3.6
+
+# Monitoring & Logging
+sentry-sdk==1.39.2
+
+# Production Server
+gunicorn==21.2.0

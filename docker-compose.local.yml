@@ -1,0 +1,219 @@
+version: '3.8'
+
+# 로컬 개발 환경 - 모든 서비스를 한 번에 실행
+# 사용법: docker-compose -f docker-compose.local.yml up -d
+
+services:
+  # ==================== Database ====================
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: triplan-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-triplan}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/pgvector-setup.sql:/docker-entrypoint-initdb.d/02-pgvector-setup.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triplan-network
+
+  # ==================== Cache ====================
+  redis:
+    image: redis:7-alpine
+    container_name: triplan-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triplan-network
+
+  # ==================== Backend ====================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --reload"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-local-dev-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/triplan
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    volumes:
+      - ./backend:/app
+      - ./data/static:/app/staticfiles
+      - ./data/media:/app/media
+      - ./data/exports:/app/exports
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - triplan-network
+
+  # ==================== WebSocket ====================
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-websocket
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-local-dev-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/triplan
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,websocket
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - triplan-network
+
+  # ==================== Frontend ====================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: triplan-frontend
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8001
+      - NEXT_PUBLIC_KAKAO_API_KEY=${NEXT_PUBLIC_KAKAO_API_KEY}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - triplan-network
+
+  # ==================== Nginx ====================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: triplan-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./data/static:/static
+      - ./data/media:/media
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - websocket
+      - frontend
+    networks:
+      - triplan-network
+
+  # ==================== Airflow Database ====================
+  airflow-postgres:
+    image: postgres:15-alpine
+    container_name: triplan-airflow-db
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+    volumes:
+      - ./data/airflow-postgres:/var/lib/postgresql/data
+    networks:
+      - triplan-network
+
+  # ==================== Airflow Webserver ====================
+  airflow-webserver:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-webserver
+    command: webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-fernet-key-here}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY:-webserver-secret}
+      - AIRFLOW_WWW_USER_USERNAME=admin
+      - AIRFLOW_WWW_USER_PASSWORD=admin
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data/airflow-data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - airflow-postgres
+      - postgres
+    networks:
+      - triplan-network
+
+  # ==================== Airflow Scheduler ====================
+  airflow-scheduler:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-scheduler
+    command: scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-fernet-key-here}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data/airflow-data:/opt/airflow/data
+    depends_on:
+      - airflow-postgres
+      - postgres
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  airflow-postgres-data:

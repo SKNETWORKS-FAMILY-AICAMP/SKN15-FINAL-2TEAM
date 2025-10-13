@@ -1,0 +1,62 @@
+version: '3.8'
+
+# 개발 환경용 설정 - docker-compose.yml과 함께 사용
+# 실행: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    volumes:
+      - ./backend:/app
+    stdin_open: true
+    tty: true
+
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    volumes:
+      - ./backend:/app
+    stdin_open: true
+    tty: true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+  airflow-webserver:
+    environment:
+      - AIRFLOW__WEBSERVER__RELOAD_ON_PLUGIN_CHANGE=True
+
+  airflow-scheduler:
+    environment:
+      - AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL=30
