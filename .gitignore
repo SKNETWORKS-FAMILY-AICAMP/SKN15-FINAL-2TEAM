@@ -118,3 +118,8 @@ test_*.sh
 # 로컬 환경변수 예시
 .env.example
 backend/.env.example
+
+# SQL 파일 (데이터베이스 초기화 제외)
+*.sql
+!database/init.sql
+!database/pgvector-setup.sql
