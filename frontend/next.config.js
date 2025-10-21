@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
 
-  // Environment variables
+  // Environment variables - use empty string to enable nginx proxy
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '',
     NEXT_PUBLIC_KAKAO_API_KEY: process.env.NEXT_PUBLIC_KAKAO_API_KEY || '',
   },
 
@@ -29,15 +28,10 @@ const nextConfig = {
     return config;
   },
 
-  // Rewrites for API proxy (development)
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`,
-      },
-    ];
-  },
+  // Rewrites disabled - using nginx proxy instead
+  // async rewrites() {
+  //   return [];
+  // },
 }
 
 module.exports = nextConfig

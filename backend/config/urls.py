@@ -15,20 +15,20 @@ urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
 
+    # Health check
+    path('', include('apps.common.urls')),
+
     # API Authentication
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # API Endpoints
     path('api/accounts/', include('apps.accounts.urls')),
-    path('api/rooms/', include('apps.rooms.urls')),
-    path('api/plans/', include('apps.plans.urls')),
+    path('api/plans/', include('apps.plans.urls')),  # ✅ 활성화
     path('api/chat/', include('apps.chat.urls')),
-    path('api/ai/', include('apps.ai.urls')),
-    path('api/export/', include('apps.export.urls')),
-
-    # Health check
-    path('health/', include('core.urls')),
+    path('api/places/', include('apps.places.urls')),  # Places API
+    # path('api/ai/', include('apps.ai.urls')),
+    # path('api/export/', include('apps.export.urls')),
 ]
 
 # Serve media files in development

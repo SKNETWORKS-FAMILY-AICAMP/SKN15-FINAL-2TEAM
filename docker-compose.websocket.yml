@@ -1,0 +1,40 @@
+version: '3.8'
+
+# ========================================
+# 인스턴스 4: WebSocket Server (Django/Daphne)
+# ========================================
+# 역할: 실시간 채팅, 알림
+# 포트: 8001
+# 의존성: PostgreSQL, Redis 인스턴스 IP 필요
+
+services:
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-websocket
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      # AWS 배포 시 실제 DB, Redis 인스턴스 IP로 변경
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge

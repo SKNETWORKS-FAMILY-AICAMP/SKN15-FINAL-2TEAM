@@ -1,0 +1,348 @@
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
+
+from .models import TripPlan, TripDay, TripItem, TripMember
+from .serializers import (
+    TripPlanSerializer,
+    TripPlanListSerializer,
+    TripDaySerializer,
+    TripItemSerializer,
+    TripMemberSerializer
+)
+from apps.accounts.models import User
+from apps.chat.models import ChatRoom, ChatMessage
+
+
+class TripPlanViewSet(viewsets.ModelViewSet):
+    """
+    Ïâ ƒç ViewSet
+
+    - list: ¥ dÑx Ïâ ©]
+    - create: » Ïâ ›1 (êŸ<\ owner dÑ î)
+    - retrieve: π Ïâ ¡8
+    - update/partial_update: Ïâ 
+    - destroy: Ïâ ≠ (ownerÃ)
+    - invite: dÑ 
+    - members: dÑ ©]
+    - remove_member: dÑ p
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """¨ ¨©ê dÑx ÏâÃ på"""
+        return TripPlan.objects.filter(
+            members__user_idx=self.request.user
+        ).distinct().select_related(
+            'owner_user_idx'
+        ).prefetch_related(
+            'members__user_idx',
+            'days__items'
+        )
+
+    def get_serializer_class(self):
+        """aX– 0| ‰x Serializer ¨©"""
+        if self.action == 'list':
+            return TripPlanListSerializer
+        return TripPlanSerializer
+
+    def perform_destroy(self, instance):
+        """Ïâ ≠î ownerÃ •"""
+        member = instance.members.filter(user_idx=self.request.user).first()
+        if not member or member.role != 'owner':
+            raise PermissionError('Ïâ ≠î ownerÃ •i»‰')
+        instance.delete()
+
+    @action(detail=True, methods=['post'])
+    def invite(self, request, pk=None):
+        """
+        dÑ 
+        POST /api/plans/trips/{trip_id}/invite/
+        Body: { "email": "friend@example.com", "role": "editor" }
+        """
+        trip = self.get_object()
+        email = request.data.get('email')
+        role = request.data.get('role', 'editor')
+
+        if not email:
+            return Response(
+                {'error': 'tT|D Ö%t¸8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 1. å\ Ux (owner î editorÃ  •)
+        my_membership = trip.members.filter(user_idx=request.user).first()
+        if not my_membership or my_membership.role not in ['owner', 'editor']:
+            return Response(
+                {'error': 'dÑ  å\t ∆µ»‰'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. ` ¨©ê >0
+        try:
+            invitee = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {'error': f'{email} ¨©ê| >D  ∆µ»‰. < å–Öt Dîi»‰.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # ¯x  )¿
+        if invitee == request.user:
+            return Response(
+                {'error': '¯x@ `  ∆µ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3. t¯ dÑx¿ Ux
+        if trip.members.filter(user_idx=invitee).exists():
+            return Response(
+                {'error': f'{email}ÿ@ t¯ t ÏâX dÑÖ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4.  ®\ rolex¿ Ux
+        valid_roles = ['owner', 'editor', 'commenter', 'viewer']
+        if role not in valid_roles:
+            return Response(
+                {'error': f' ®X¿ J@ Ì`Ö»‰. {valid_roles}  Xò|  ›X8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # owner Ì`@  à
+        if role == 'owner':
+            return Response(
+                {'error': 'owner Ì`\î `  ∆µ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 5. TripMember ›1 (!)
+        new_member = TripMember.objects.create(
+            trip_idx=trip,
+            user_idx=invitee,
+            role=role
+        )
+
+        # 6. D)– ‹§\ T‹¿ °
+        try:
+            room = ChatRoom.objects.get(trip_idx=trip)
+            ChatMessage.objects.create(
+                room_idx=room,
+                user_idx=None,  # ‹§\ T‹¿
+                msg_type='system',
+                content=f'{invitee.email}ÿt {request.user.email}ÿX \ 8ÏXhµ»‰. Xi»‰! =K'
+            )
+        except ChatRoom.DoesNotExist:
+            # D)t ∆<t ›1
+            room = ChatRoom.objects.create(
+                trip_idx=trip,
+                title=f'{trip.title} D)'
+            )
+
+        return Response({
+            'success': True,
+            'message': f'{invitee.email}ÿD àµ»‰',
+            'member': TripMemberSerializer(new_member).data
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'])
+    def members(self, request, pk=None):
+        """
+        dÑ ©] på
+        GET /api/plans/trips/{trip_id}/members/
+        """
+        trip = self.get_object()
+        members = trip.members.select_related('user_idx').all()
+        serializer = TripMemberSerializer(members, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def remove_member(self, request, pk=None):
+        """
+        dÑ p
+        POST /api/plans/trips/{trip_id}/remove_member/
+        Body: { "user_idx": 123 }
+        """
+        trip = self.get_object()
+        user_idx_to_remove = request.data.get('user_idx')
+
+        if not user_idx_to_remove:
+            return Response(
+                {'error': 'user_idx| Ö%t¸8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 1. å\ Ux (ownerÃ dÑ p •)
+        my_membership = trip.members.filter(user_idx=request.user).first()
+        if not my_membership or my_membership.role != 'owner':
+            return Response(
+                {'error': 'dÑ pî ownerÃ •i»‰'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. p` dÑ >0
+        member_to_remove = trip.members.filter(
+            user_idx__user_idx=user_idx_to_remove
+        ).first()
+
+        if not member_to_remove:
+            return Response(
+                {'error': 't˘ dÑ| >D  ∆µ»‰'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 3. ownerî p`  ∆L
+        if member_to_remove.role == 'owner':
+            return Response(
+                {'error': 'ownerî p`  ∆µ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4. ¯x p )¿ (owner DÃ Ω∞ ¯x@ ò0\ ò¨)
+        if member_to_remove.user_idx == request.user:
+            return Response(
+                {'error': '¯xD pX$t leave aXD ¨©X8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 5. dÑ p
+        removed_email = member_to_remove.user_idx.email
+        member_to_remove.delete()
+
+        # 6. D)– ‹§\ T‹¿
+        try:
+            room = ChatRoom.objects.get(trip_idx=trip)
+            ChatMessage.objects.create(
+                room_idx=room,
+                user_idx=None,
+                msg_type='system',
+                content=f'{removed_email}ÿt Ïâ– x»µ»‰.'
+            )
+        except ChatRoom.DoesNotExist:
+            pass
+
+        return Response({
+            'success': True,
+            'message': f'{removed_email}ÿD pàµ»‰'
+        })
+
+    @action(detail=True, methods=['post'])
+    def leave(self, request, pk=None):
+        """
+        Ïâ ò0 (¯xt dÑÌ ≠)
+        POST /api/plans/trips/{trip_id}/leave/
+        """
+        trip = self.get_object()
+
+        my_membership = trip.members.filter(user_idx=request.user).first()
+        if not my_membership:
+            return Response(
+                {'error': 't ÏâX dÑ DŸ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ownerî ò  ∆L
+        if my_membership.role == 'owner':
+            return Response(
+                {'error': 'ownerî ÏâD ò  ∆µ»‰. ÏâD ≠Xpò ‰x ¨å–å ëƒX8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # dÑÌ ≠
+        my_email = request.user.email
+        my_membership.delete()
+
+        # D)– ‹§\ T‹¿
+        try:
+            room = ChatRoom.objects.get(trip_idx=trip)
+            ChatMessage.objects.create(
+                room_idx=room,
+                user_idx=None,
+                msg_type='system',
+                content=f'{my_email}ÿt ÏâD òµ»‰.'
+            )
+        except ChatRoom.DoesNotExist:
+            pass
+
+        return Response({
+            'success': True,
+            'message': 'Ïâ– òµ»‰'
+        })
+
+    @action(detail=True, methods=['post'])
+    def update_role(self, request, pk=None):
+        """
+        dÑ Ì` ¿Ω
+        POST /api/plans/trips/{trip_id}/update_role/
+        Body: { "user_idx": 123, "role": "editor" }
+        """
+        trip = self.get_object()
+        user_idx = request.data.get('user_idx')
+        new_role = request.data.get('role')
+
+        # å\ Ux
+        my_membership = trip.members.filter(user_idx=request.user).first()
+        if not my_membership or my_membership.role != 'owner':
+            return Response(
+                {'error': 'Ì` ¿Ω@ ownerÃ •i»‰'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # ¡ dÑ >0
+        target_member = trip.members.filter(user_idx__user_idx=user_idx).first()
+        if not target_member:
+            return Response(
+                {'error': 't˘ dÑ| >D  ∆µ»‰'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # ownerî Ì` ¿Ω à
+        if target_member.role == 'owner':
+            return Response(
+                {'error': 'ownerX Ì`@ ¿Ω`  ∆µ»‰'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        #  ®\ Ì`x¿ Ux
+        valid_roles = ['editor', 'commenter', 'viewer']
+        if new_role not in valid_roles:
+            return Response(
+                {'error': f' ®X¿ J@ Ì`Ö»‰. {valid_roles}  Xò|  ›X8î'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Ì` ¿Ω
+        old_role = target_member.role
+        target_member.role = new_role
+        target_member.save()
+
+        return Response({
+            'success': True,
+            'message': f'{target_member.user_idx.email}ÿX Ì`D {old_role} í {new_role}\ ¿Ωàµ»‰',
+            'member': TripMemberSerializer(target_member).data
+        })
+
+
+class TripDayViewSet(viewsets.ModelViewSet):
+    """Ïâ |ê ViewSet"""
+    serializer_class = TripDaySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return TripDay.objects.filter(
+            trip_idx__members__user_idx=self.request.user
+        ).distinct()
+
+
+class TripItemViewSet(viewsets.ModelViewSet):
+    """Ïâ Dt\ ViewSet"""
+    serializer_class = TripItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return TripItem.objects.filter(
+            day_idx__trip_idx__members__user_idx=self.request.user
+        ).distinct()

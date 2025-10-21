@@ -9,9 +9,12 @@ AI 챗봇과 대화하며 여행 일정을 계획하고, 동행자와 실시간�
 - OpenAI GPT-4를 활용한 지능형 추천
 - pgvector를 이용한 벡터 검색으로 관련 정보 제공
 
-### 👥 실시간 협업
-- WebSocket 기반 실시간 채팅
+### 👥 통합 채팅 위젯 (신규!)
+- **스마트 모드 전환**: 1:1 AI 챗봇 ↔ 그룹 채팅 자동 전환
+- WebSocket 기반 실시간 메시지 동기화
+- 그룹 채팅에서도 `@봇` 멘션으로 AI 호출 가능
 - 동행자와 함께 일정 편집 및 투표
+- 타이핑 인디케이터 및 온라인 상태 표시
 - Redis를 통한 빠른 메시지 동기화
 
 ### 📊 통합 정보 제공
@@ -87,7 +90,7 @@ cp .env.template .env
 nano .env  # API 키 등 설정
 
 # 전체 서비스 실행 (원클릭!)
-./run-local.sh
+./scripts/run-local.sh
 ```
 
 ### 수동 설정
@@ -166,23 +169,48 @@ docker-compose exec airflow-webserver airflow users create \
 
 ## 🌐 배포 (Production)
 
-EC2 인스턴스에 배포하는 방법은 [DEPLOYMENT.md](DEPLOYMENT.md)를 참고하세요.
+### AWS 마이크로서비스 배포 (권장)
 
-### 빠른 배포 개요
+7개 인스턴스로 구성된 마이크로서비스 아키텍처로 배포합니다.
+
+**📖 가이드:**
+- **처음부터 끝까지**: [DEPLOYMENT_STEP_BY_STEP.md](docs/DEPLOYMENT_STEP_BY_STEP.md) ⭐ **초보자 필수!**
+- **Windows + PuTTY**: [DEPLOYMENT_WINDOWS_PUTTY.md](docs/DEPLOYMENT_WINDOWS_PUTTY.md) 🪟 **Windows 사용자**
+- **빠른 시작 (5단계)**: [QUICK_START_AWS.md](docs/QUICK_START_AWS.md)
+- **전체 가이드**: [AWS_DEPLOYMENT_GUIDE.md](docs/AWS_DEPLOYMENT_GUIDE.md)
+- **배포 검증**: [DEPLOYMENT_VALIDATION.md](docs/DEPLOYMENT_VALIDATION.md)
+- **환경변수 예시**: [deploy-examples/](deploy-examples/)
+
+#### 초간단 배포 (3단계)
 
 ```bash
-# Frontend EC2
-cd triplan/deploy/frontend
-./deploy.sh
+# 1. 모든 인스턴스에 Docker 자동 설치
+./scripts/remote-setup.sh
+# → "8) 전체 인스턴스 설정" 선택
 
-# Backend EC2
-cd triplan/deploy/backend
-./deploy.sh
+# 2. 각 인스턴스에 .env 파일 생성
+# → deploy-examples/env-templates/ 참고
 
-# Database + Airflow EC2
-cd triplan/deploy/database
-./deploy.sh
+# 3. 전체 배포
+./scripts/deploy-aws.sh
+# → "8) 전체 배포" 선택
 ```
+
+#### 인스턴스 구성
+
+| 인스턴스 | 역할 | 포트 | 권장 타입 |
+|---------|------|------|----------|
+| 1. Nginx | Entry Point | 80, 443 | t3.micro |
+| 2. Frontend | Next.js UI | 3000 | t3.small |
+| 3. Backend | Django API | 8000 | t3.medium |
+| 4. WebSocket | 실시간 통신 | 8001 | t3.small |
+| 5. Redis | Cache & Channel | 6379 | t3.micro |
+| 6. PostgreSQL | 메인 DB | 5432 | t3.medium |
+| 7. Airflow | 데이터 파이프라인 | 8080 | t3.medium |
+
+### 기존 배포 방법
+
+단일/소규모 배포는 [DEPLOYMENT.md](docs/DEPLOYMENT.md)를 참고하세요.
 
 ## 📦 기술 스택
 
@@ -221,7 +249,7 @@ triplan/
 │   │   ├── accounts/    # 사용자 인증
 │   │   ├── rooms/       # 여행 방
 │   │   ├── plans/       # 일정 관리
-│   │   ├── chat/        # 실시간 채팅
+│   │   ├── chat/        # 실시간 채팅 (통합 위젯)
 │   │   ├── ai/          # AI/RAG 시스템
 │   │   └── export/      # 문서 내보내기
 │   └── config/          # Django 설정
@@ -230,15 +258,25 @@ triplan/
 │   └── src/
 │       ├── pages/       # 페이지 라우팅
 │       ├── components/  # React 컴포넌트
+│       │   └── planner/
+│       │       ├── UnifiedChatWidget.tsx  # 통합 채팅 위젯 (신규)
+│       │       └── ChatWidget.css         # 채팅 스타일
+│       ├── hooks/       # Custom Hooks
+│       │   ├── useCollaborativeChat.ts    # WebSocket 훅
+│       │   └── useAuth.ts                 # 인증 훅
 │       ├── services/    # API 호출
-│       └── store/       # 상태 관리
+│       │   ├── api.ts
+│       │   └── chatAPI.ts                 # 채팅 API (신규)
+│       └── types/       # TypeScript 타입
 │
 ├── airflow/             # 데이터 파이프라인
 │   └── dags/           # DAG 정의
 │
 ├── database/            # DB 초기화 스크립트
 ├── nginx/              # Nginx 설정
-└── docker-compose.yml  # Docker 오케스트레이션
+├── docker-compose.yml  # Docker 오케스트레이션
+├── UNIFIED_CHAT_WIDGET_GUIDE.md  # 통합 채팅 가이드 (신규)
+└── COLLABORATIVE_CHAT_SETUP.md   # 협업 채팅 설정
 ```
 
 ## 🔧 개발 가이드

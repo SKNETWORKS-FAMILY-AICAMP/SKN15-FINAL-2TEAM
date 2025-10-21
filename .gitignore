@@ -79,4 +79,42 @@ ssl/
 *.tmp
 *.temp
 
-./claude
+# ========================================
+# AWS 배포 관련 (인스턴스에 올리지 않음)
+# ========================================
+
+# 로컬 개발용 문서
+/docs/
+*.md
+
+# 배포 예시 및 템플릿 (참고용)
+/deploy-examples/
+
+# 로컬 개발용 스크립트
+/scripts/
+*.sh
+
+# SSH 키 파일
+*.pem
+*.ppk
+
+# 백업 파일
+*.tar.gz
+*.zip
+backup-*
+
+# Windows 관련
+*.bat
+Thumbs.db
+
+# 로컬 테스트용
+test_*.py
+test_*.sh
+*_test.py
+
+# Claude Code
+.claude/
+
+# 로컬 환경변수 예시
+.env.example
+backend/.env.example

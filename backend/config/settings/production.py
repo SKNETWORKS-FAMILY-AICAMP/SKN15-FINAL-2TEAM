@@ -8,6 +8,12 @@ DEBUG = False
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost'])
 
+# CORS Settings for production
+CORS_ALLOW_ALL_ORIGINS = False  # Disable allow all in production
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'https://yourdomain.com',  # Replace with your actual domain
+])
+
 # Security settings
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True

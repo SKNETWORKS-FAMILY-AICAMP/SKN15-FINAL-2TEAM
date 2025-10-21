@@ -49,15 +49,19 @@ services:
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 300 --graceful-timeout 300"
     environment:
-      - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-triplan}
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-temp-secret-key-for-development-only}
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
+      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
       - REDIS_URL=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - KAKAO_API_KEY=${KAKAO_API_KEY}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
     volumes:
       - ./backend:/app
       - ./data/static:/app/staticfiles
@@ -81,13 +85,17 @@ services:
     container_name: triplan-websocket
     command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
     environment:
-      - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-triplan}
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-temp-secret-key-for-development-only}
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
+      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
       - REDIS_URL=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - KAKAO_API_KEY=${KAKAO_API_KEY}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,websocket}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
     volumes:
       - ./backend:/app
     ports:
@@ -112,7 +120,6 @@ services:
       - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
       - NEXT_PUBLIC_KAKAO_API_KEY=${NEXT_PUBLIC_KAKAO_API_KEY}
     volumes:
-      - ./frontend:/app
       - /app/node_modules
       - /app/.next
     ports:

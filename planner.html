@@ -21,7 +21,7 @@
         }
 
         .header {
-            background-color: white;
+            background-color: #364C84;
             padding: 15px 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
@@ -32,8 +32,8 @@
         }
 
         .logo {
-            color: #2196F3;
-            font-size: 1.5rem;
+            color: #ffff;
+            font-size: 2rem;
             font-weight: bold;
             text-decoration: none;
         }
@@ -54,14 +54,16 @@
         }
 
         .btn-primary {
-            background-color: #2196F3;
+            background-color: #E7F1A5;
             color: white;
         }
 
         .btn-outline {
             background-color: white;
-            color: #2196F3;
-            border: 1px solid #2196F3;
+            color: #364c84;
+            border: 1px solid #364c84;            
+            font-weight: bold;
+
         }
 
         .main-container {
@@ -88,7 +90,7 @@
         /* Step Navigation Styles */
         .step-navigation {
             width: 140px;
-            background: linear-gradient(180deg, #2196F3 0%, #1976D2 100%);
+            background: linear-gradient(180deg, #d0d9f5 0%, #d0d9f5 100%);
             padding: 15px 0;
             display: flex;
             flex-direction: column;
@@ -141,7 +143,7 @@
 
         .step-item.active .step-number {
             background-color: white;
-            color: #2196F3;
+            color: #364C84;
         }
 
         .step-item.completed .step-number {
@@ -155,6 +157,7 @@
 
         .step-title {
             font-weight: 600;
+            color: #364c84;
             font-size: 0.8rem;
             margin-bottom: 2px;
             line-height: 1.1;
@@ -162,6 +165,7 @@
 
         .step-description {
             font-size: 0.65rem;
+            color: #364c84;
             opacity: 0.8;
             line-height: 1.1;
         }
@@ -190,7 +194,7 @@
 
         .panel-title {
             font-size: 1.8rem;
-            color: #2196F3;
+            color: #364c84;
             margin-bottom: 25px;
             font-weight: 600;
             display: flex;
@@ -206,7 +210,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #364C84;
         }
 
         .form-input {
@@ -219,7 +223,7 @@
         }
 
         .form-input:focus {
-            border-color: #2196F3;
+            border-color: #364C84;
             outline: none;
             box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
         }
@@ -252,9 +256,9 @@
         }
 
         .date-text-display.selected {
-            background-color: #e3f2fd;
-            border-color: #2196F3;
-            color: #2196F3;
+            background-color: #d0d9f5;
+            border-color: None;
+            color: #666;
             font-weight: 600;
         }
 
@@ -268,8 +272,8 @@
         }
 
         .calendar-header {
-            background-color: #2196F3;
-            color: white;
+            background-color: #f2f7d0;
+            color: #364c84;
             padding: 15px;
             display: flex;
             justify-content: space-between;
@@ -279,7 +283,7 @@
         .calendar-nav {
             background: none;
             border: none;
-            color: white;
+            color: #364c84;
             font-size: 1.5rem;
             cursor: pointer;
             padding: 5px 10px;
@@ -331,25 +335,25 @@
         }
 
         .calendar-day.today {
-            background-color: #2196F3;
+            background-color: #e8f5e8;
             color: white;
             font-weight: bold;
         }
 
         .calendar-day.selected-start {
-            background-color: #4CAF50 !important;
-            color: white !important;
+            background-color: #ecf1c0 !important;
+            color: #364c84 !important;
             font-weight: bold !important;
         }
 
         .calendar-day.selected-end {
-            background-color: #FF5722 !important;
-            color: white !important;
+            background-color: #ecf1c0 !important;
+            color: #364c84 !important;
             font-weight: bold !important;
         }
 
         .calendar-day.in-range {
-            background-color: #e8f5e8 !important;
+            background-color: #d0d9f5 !important;
             color: #333 !important;
         }
 
@@ -365,14 +369,14 @@
 
         /* Version Selection Styles */
         .version-btn:hover {
-            background-color: #2196F3 !important;
+            background-color: #364C84 !important;
             color: white !important;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 8px #364C84(33, 150, 243, 0.3);
         }
 
         .version-btn.active {
-            background-color: #2196F3 !important;
+            background-color: #364C84 !important;
             color: white !important;
         }
 
@@ -402,7 +406,7 @@
         }
 
         .accordion-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             color: white;
             padding: 15px 20px;
             cursor: pointer;
@@ -448,7 +452,7 @@
 
         .time-slot-header {
             font-weight: 600;
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
@@ -476,11 +480,11 @@
 
         .day-tab:hover {
             background: #e3f2fd;
-            border-top-color: #2196F3;
+            border-top-color: #364C84;
         }
 
         .day-tab.active {
-            background: #2196F3;
+            background: #364C84;
             color: white;
             border-top-color: #1976D2;
         }
@@ -506,7 +510,7 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: linear-gradient(to bottom, #2196F3, #21CBF3);
+            background: linear-gradient(to bottom, #364C84);
         }
 
         .timeline-item {
@@ -524,7 +528,7 @@
         .timeline-item:hover {
             transform: translateX(10px);
             box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         .timeline-item::before {
@@ -535,16 +539,16 @@
             transform: translateY(-50%);
             width: 15px;
             height: 15px;
-            background: #2196F3;
+            background: #364C84;
             border-radius: 50%;
             border: 3px solid white;
-            box-shadow: 0 0 0 3px #2196F3;
+            box-shadow: 0 0 0 3px #364C84;
         }
 
         .timeline-day-header {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 10px;
         }
 
@@ -580,7 +584,7 @@
             max-width: 800px;
             max-height: 80vh;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px #364C84(0, 0, 0, 0.3);
             animation: modalSlideIn 0.3s ease-out;
         }
 
@@ -596,7 +600,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             color: white;
             padding: 20px;
             display: flex;
@@ -645,7 +649,7 @@
         }
 
         .modal-day-card:hover {
-            border-color: #2196F3;
+            border-color: #364C84;
             box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);
         }
 
@@ -721,7 +725,7 @@
         }
 
         .timeline-day-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             color: white;
             padding: 15px 20px;
             border-radius: 10px;
@@ -770,7 +774,7 @@
         .continuous-time {
             min-width: 70px;
             font-weight: bold;
-            color: #2196F3;
+            color: #364C84;
             font-size: 0.85rem;
             display: flex;
             align-items: center;
@@ -792,7 +796,7 @@
         }
 
         .continuous-content:hover {
-            border-color: #2196F3;
+            border-color: #364C84;
             box-shadow: 0 4px 8px rgba(33, 150, 243, 0.15);
         }
 
@@ -846,22 +850,14 @@
         .continuous-travel {
             margin: 8px 0;
             padding: 8px 15px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            background: linear-gradient(135deg, #e9ecef);
             border-radius: 6px;
-            border-left: 3px solid #2196F3;
+            border-left: 3px solid #364C84;
             font-size: 0.8rem;
             color: #666;
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .travel-mini-graph {
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(to right, #2196F3, #ff4444);
-            border-radius: 1px;
-            position: relative;
         }
 
         .travel-mini-graph::after {
@@ -881,14 +877,14 @@
 
         .add-schedule-btn {
             padding: 12px 24px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            color: white;
+            background: linear-gradient(135deg, #f2f7d0);
+            color: #364C84;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 600;
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 15px #364C84(33, 150, 243, 0.3);
             transition: all 0.3s ease;
         }
 
@@ -926,12 +922,12 @@
         }
 
         .icon-option:hover {
-            border-color: #2196F3;
+            border-color: #364C84;
             background: #f8f9fa;
         }
 
         .icon-option.selected {
-            border-color: #2196F3;
+            border-color: #364C84;
             background: #e3f2fd;
         }
 
@@ -978,7 +974,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             color: white;
             padding: 20px 25px;
             display: flex;
@@ -1035,7 +1031,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364c84);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -1154,14 +1150,14 @@
         }
 
         .search-type-btn:hover {
-            border-color: #2196F3;
-            color: #2196F3;
+            border-color: #364C84;
+            color: #364C84;
         }
 
         .search-type-btn.active {
-            background: #2196F3;
+            background: #364C84;
             color: white;
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         /* 예산 필터 버튼 스타일 */
@@ -1177,14 +1173,14 @@
         }
 
         .budget-filter-btn:hover {
-            border-color: #2196F3;
-            color: #2196F3;
+            border-color: #364C84;
+            color: #364C84;
         }
 
         .budget-filter-btn.active {
-            background: #2196F3;
+            background: #364C84;
             color: white;
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         /* 여행지 정보 스타일 */
@@ -1204,7 +1200,7 @@
         }
 
         .info-section-title {
-            color: #2196F3;
+            color: #364C84;
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 15px;
@@ -1223,7 +1219,7 @@
             background: #f8f9fa;
             padding: 12px 15px;
             border-radius: 8px;
-            border-left: 4px solid #2196F3;
+            border-left: 4px solid #364C84;
         }
 
         .info-label {
@@ -1250,8 +1246,8 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-            color: white;
+            background: linear-gradient(135deg, #d0d9f5);
+            color: #364C84;
             padding: 20px;
             border-radius: 12px;
             flex: 1;
@@ -1322,7 +1318,7 @@
             padding: 12px 15px;
             background: #f8f9fa;
             border-radius: 8px;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid #e7f1ab;
         }
 
         .tip-icon {
@@ -1347,7 +1343,7 @@
         }
 
         .preview-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             color: white;
             padding: 25px;
             display: flex;
@@ -1394,7 +1390,7 @@
         }
 
         .travel-summary h4 {
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 15px;
             font-size: 1.1rem;
         }
@@ -1462,7 +1458,7 @@
         .preview-time {
             min-width: 60px;
             font-size: 0.85rem;
-            color: #2196F3;
+            color: #364C84;
             font-weight: 600;
         }
 
@@ -1494,7 +1490,7 @@
         }
 
         .day-card:hover {
-            border-color: #2196F3;
+            border-color: #364C84;
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
         }
@@ -1509,7 +1505,7 @@
         .day-title {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #2196F3;
+            color: #364C84;
         }
 
         .day-date {
@@ -1549,9 +1545,9 @@
         .day-action-btn {
             flex: 1;
             padding: 8px 12px;
-            border: 1px solid #2196F3;
+            border: 1px solid #f2f7d0;
             background: white;
-            color: #2196F3;
+            color: #364C84;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9rem;
@@ -1559,12 +1555,12 @@
         }
 
         .day-action-btn:hover {
-            background: #2196F3;
+            background: #364C84;
             color: white;
         }
 
         .day-action-btn.primary {
-            background: #2196F3;
+            background: #364C84;
             color: white;
         }
 
@@ -1606,9 +1602,9 @@
 
         .preference-tag:hover,
         .preference-tag.selected {
-            background-color: #2196F3;
+            background-color: #364C84;
             color: white;
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         /* Location Search Styles */
@@ -1639,13 +1635,13 @@
 
         .budget-tag:hover {
             background-color: #e3f2fd;
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         .budget-tag.selected {
-            background-color: #2196F3;
+            background-color: #364C84;
             color: white;
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         /* Locations Sidebar Styles */
@@ -1671,7 +1667,7 @@
             left: -50px;
             top: 50%;
             transform: translateY(-50%);
-            background: #2196F3;
+            background: #364C84;
             color: white;
             padding: 15px 10px;
             border-radius: 10px 0 0 10px;
@@ -1708,7 +1704,7 @@
         }
 
         .sidebar-header h3 {
-            color: #2196F3;
+            color: #364C84;
             font-size: 1.1rem;
             margin: 0;
         }
@@ -1767,7 +1763,7 @@
 
         .search-btn {
             padding: 12px 16px;
-            background-color: #2196F3;
+            background-color: #364C84;
             color: white;
             border: none;
             border-radius: 8px;
@@ -1818,7 +1814,7 @@
         }
 
         .add-btn {
-            background-color: #4CAF50;
+            background-color: #f2f7d0;
             color: white;
             border: none;
             border-radius: 50%;
@@ -1849,7 +1845,7 @@
 
         .selected-locations-cart h3 {
             margin-bottom: 15px;
-            color: #2196F3;
+            color: #364C84;
             font-size: 1.1rem;
         }
 
@@ -1908,7 +1904,7 @@
 
         .selected-count {
             font-weight: 600;
-            color: #2196F3;
+            color: #364C84;
             text-align: center;
         }
 
@@ -1923,7 +1919,7 @@
         .ai-chat-title {
             font-size: 1.1rem;
             margin-bottom: 15px;
-            color: #2196F3;
+            color: #364C84;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -1944,7 +1940,7 @@
 
         .chat-send-btn {
             padding: 12px 20px;
-            background-color: #2196F3;
+            background-color: #364C84;
             color: white;
             border: none;
             border-radius: 25px;
@@ -1955,8 +1951,8 @@
         .generate-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            color: white;
+            background: linear-gradient(135deg, #364C84);
+            color: #ffff;
             border: none;
             border-radius: 10px;
             font-size: 1rem;
@@ -1968,13 +1964,13 @@
 
         .generate-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 5px 15px #364c84(33, 150, 243, 0.3);
         }
 
         .map-container {
             width: 100%;
             height: 100%;
-            background: linear-gradient(45deg, #e8f5e8, #d4ecd4);
+            background: linear-gradient(45deg, #ffff);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1998,14 +1994,14 @@
 
         .map-title {
             font-size: 1.5rem;
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 20px;
             font-weight: 600;
         }
 
         .map-icon {
             font-size: 4rem;
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 20px;
         }
 
@@ -2061,7 +2057,7 @@
         .route-line {
             position: absolute;
             width: 2px;
-            background: linear-gradient(to bottom, #2196F3, #21CBF3);
+            background: linear-gradient(to bottom, #364C84);
             transform-origin: top;
             animation: drawLine 3s ease-in-out infinite;
         }
@@ -2106,7 +2102,7 @@
         }
 
         .floating-info h4 {
-            color: #2196F3;
+            color: #364C84;
             margin-bottom: 10px;
             font-size: 1rem;
         }
@@ -2187,11 +2183,11 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="index.html" class="logo">💬 TripTalk</a>
+        <a href="index.html" class="logo">        Triplan</a>
         <div class="nav-buttons">
             <a href="index.html" class="btn btn-outline">홈으로</a>
-            <a href="#" class="btn btn-outline">로그인</a>
-            <a href="#" class="btn btn-primary">회원가입</a>
+            <a href="login.html" class="btn btn-outline">로그인</a>
+            <a href="signup.html" class="btn btn-primary">회원가입</a>
         </div>
     </header>
 
@@ -2286,7 +2282,7 @@
                     </div>
 
                     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
-                        <h4 style="color: #2196F3; margin-bottom: 15px;">📊 여행 기간 정보</h4>
+                        <h4 style="color: #364C84; margin-bottom: 15px;">📊 여행 기간 정보</h4>
                         <div id="travelDuration" style="font-size: 1.1rem; color: #333; margin-bottom: 10px;">
                             기간을 선택하면 여기에 표시됩니다
                         </div>
@@ -2326,7 +2322,7 @@
                     </div>
 
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
-                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #666; flex: 1;">
+                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #364C84; flex: 1;">
                             ← 이전 단계
                         </button>
                         <button type="button" class="generate-btn" onclick="nextStep()" style="flex: 2;">
@@ -2443,7 +2439,7 @@
                     </div>
 
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
-                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #666; flex: 1;">
+                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #364C84; flex: 1;">
                             ← 이전 단계
                         </button>
                         <button type="button" class="generate-btn" onclick="nextStep()" style="flex: 2;">
@@ -2503,7 +2499,7 @@
                     </div>
 
                     <div style="display: flex; gap: 15px; margin-top: 20px;">
-                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #666; flex: 1;">
+                        <button type="button" class="generate-btn" onclick="prevStep()" style="background: #364c84; flex: 1;">
                             ← 이전 단계
                         </button>
                         <button type="button" class="generate-btn" onclick="finalizePlan()" style="background: #4CAF50; flex: 2;">
@@ -2680,7 +2676,7 @@
             position: fixed;
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -2710,7 +2706,7 @@
             right: 20px;
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364C84);
             border-radius: 50%;
             display: none;
             align-items: center;
@@ -2727,7 +2723,7 @@
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #364c84);
             color: white;
             padding: 15px 20px;
             display: flex;
@@ -2819,7 +2815,7 @@
         }
 
         .user-message .message-content {
-            background: #2196F3;
+            background: #364C84;
             color: white;
         }
 
@@ -2859,7 +2855,7 @@
         }
 
         .suggestion-chip:hover {
-            background: #2196F3;
+            background: #364C84;
             color: white;
         }
 
@@ -2882,13 +2878,13 @@
         }
 
         .chat-input-field:focus {
-            border-color: #2196F3;
+            border-color: #364C84;
         }
 
         .chat-send-button {
             width: 40px;
             height: 40px;
-            background: #2196F3;
+            background: #364C84;
             border: none;
             border-radius: 50%;
             color: white;
@@ -3472,7 +3468,7 @@
 
             // 장소 리스트
             if (selectedLocations.length > 0) {
-                content += '<div style="margin-bottom: 15px;"><h4 style="color: #2196F3; margin-bottom: 10px;">📍 선택한 장소</h4>';
+                content += '<div style="margin-bottom: 15px;"><h4 style="color: #364C84; margin-bottom: 10px;">📍 선택한 장소</h4>';
                 selectedLocations.forEach((location, index) => {
                     content += `
                         <div class="sidebar-item">
@@ -3487,7 +3483,7 @@
 
             // 숙소 리스트
             if (selectedAccommodations.length > 0) {
-                content += '<div><h4 style="color: #2196F3; margin-bottom: 10px;">🏨 선택한 숙소</h4>';
+                content += '<div><h4 style="color: #364C84; margin-bottom: 10px;">🏨 선택한 숙소</h4>';
                 selectedAccommodations.forEach((accommodation, index) => {
                     content += `
                         <div class="sidebar-item">
@@ -3844,13 +3840,13 @@
                     <div class="day-summary-header">
                         <div class="day-meta">
                             <span class="day-weather">☀️ 맑음 25°C</span>
-                            <span class="day-budget">💰 예산: <input type="number" id="dayBudget${dayNum}" placeholder="0" style="width: 80px; border: none; background: transparent; color: #2196F3; font-weight: bold;">원</span>
+                            <span class="day-budget">💰 예산: <input type="number" id="dayBudget${dayNum}" placeholder="0" style="width: 80px; border: none; background: transparent; color: #364C84; font-weight: bold;">원</span>
                         </div>
                     </div>
 
                     <!-- 타임라인 계획 -->
                     <div class="day-timeline-container">
-                        <h4 style="color: #2196F3; margin-bottom: 20px;">🕐 일정 타임라인</h4>
+                        <h4 style="color: #364C84; margin-bottom: 20px;">🕐 일정 타임라인</h4>
                         <div class="timeline-schedule" id="timelineSchedule${dayNum}">
                             ${generateDetailedTimeline(dayNum)}
                         </div>
@@ -3858,7 +3854,7 @@
 
                     <!-- 장소 추가 섹션 -->
                     <div class="add-location-section">
-                        <h4 style="color: #2196F3; margin-bottom: 15px;">📍 새 장소 추가</h4>
+                        <h4 style="color: #364C84; margin-bottom: 15px;">📍 새 장소 추가</h4>
                         <div class="location-search-area">
                             <div class="search-box" style="margin-bottom: 15px;">
                                 <input type="text" class="form-input" placeholder="장소를 검색해보세요" id="dayLocationSearch">
@@ -3908,13 +3904,13 @@
                 background: white;
                 border-radius: 10px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                border-left: 4px solid #2196F3;
+                border-left: 4px solid #364C84;
             }
 
             .timeline-time {
                 min-width: 80px;
                 font-weight: bold;
-                color: #2196F3;
+                color: #364C84;
                 font-size: 0.9rem;
                 display: flex;
                 align-items: center;
@@ -3950,7 +3946,7 @@
                 padding: 10px;
                 background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
                 border-radius: 8px;
-                border: 1px dashed #2196F3;
+                border: 1px dashed #364C84;
             }
 
             .travel-graph {
@@ -3964,7 +3960,7 @@
             .travel-line {
                 width: 100px;
                 height: 3px;
-                background: linear-gradient(to right, #2196F3, #ff4444);
+                background: linear-gradient(to right, #364C84, #ff4444);
                 border-radius: 2px;
                 position: relative;
                 animation: travelFlow 2s ease-in-out infinite;
@@ -4004,7 +4000,7 @@
             }
 
             .timeline-btn.edit {
-                background: #2196F3;
+                background: #364C84;
                 color: white;
             }
 
@@ -4030,8 +4026,8 @@
             }
 
             .add-timeline-item:hover {
-                border-color: #2196F3;
-                color: #2196F3;
+                border-color: #364C84;
+                color: #364C84;
                 background: #f8f9fa;
             }
         `;
@@ -4318,13 +4314,13 @@
                                 <div class="day-summary-header">
                                     <div class="day-meta">
                                         <span class="day-weather">☀️ 맑음 25°C</span>
-                                        <span class="day-budget">💰 예상 비용: <input type="number" id="scheduleBudget" placeholder="0" value="${editItem?.budget || ''}" style="width: 80px; border: none; background: transparent; color: #2196F3; font-weight: bold;">원</span>
+                                        <span class="day-budget">💰 예상 비용: <input type="number" id="scheduleBudget" placeholder="0" value="${editItem?.budget || ''}" style="width: 80px; border: none; background: transparent; color: #364C84; font-weight: bold;">원</span>
                                     </div>
                                 </div>
 
                                 <!-- 장소/숙소 통합 검색 섹션 -->
                                 <div class="location-search-section">
-                                    <h4 style="color: #2196F3; margin-bottom: 15px;">🔍 장소 & 숙소 검색</h4>
+                                    <h4 style="color: #364C84; margin-bottom: 15px;">🔍 장소 & 숙소 검색</h4>
 
                                     <!-- 검색 타입 선택 -->
                                     <div style="margin-bottom: 15px;">
@@ -4336,7 +4332,7 @@
 
                                     <div class="search-box">
                                         <input type="text" id="modalLocationSearch" class="form-input" placeholder="장소를 검색해보세요 (예: 경복궁, 명동)" style="flex: 1;">
-                                        <button type="button" onclick="searchInModal()" style="padding: 12px 16px; background: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">🔍</button>
+                                        <button type="button" onclick="searchInModal()" style="padding: 12px 16px; background: #364C84; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">🔍</button>
                                     </div>
 
                                     <!-- 숙소 검색시 예산 필터 -->
@@ -4357,7 +4353,7 @@
 
                                 <!-- 일정 정보 입력 -->
                                 <div class="schedule-form-container">
-                                    <h4 style="color: #2196F3; margin-bottom: 20px;">📋 일정 정보</h4>
+                                    <h4 style="color: #364C84; margin-bottom: 20px;">📋 일정 정보</h4>
 
                                     <div class="form-group">
                                         <label class="form-label">날짜 선택</label>
@@ -4546,7 +4542,7 @@
                             <div class="result-description">${item.description}</div>
                             <div style="font-size: 0.8rem; color: #999; margin-top: 4px;">
                                 📍 ${item.city}
-                                ${isAccommodation ? `<span style="margin-left: 10px; color: #2196F3; font-weight: 600;">${item.price}</span>` : ''}
+                                ${isAccommodation ? `<span style="margin-left: 10px; color: #364C84; font-weight: 600;">${item.price}</span>` : ''}
                             </div>
                         </div>
                         <button class="select-btn" onclick="selectItemFromSearch('${item.name}', '${item.description}', '${item.city}', '${item.type}', '${item.price || ''}')">선택</button>
@@ -5104,7 +5100,7 @@
             responseDiv.style.display = 'block';
             responseDiv.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <span style="color: #2196F3; font-weight: bold;">🤖 AI 어시스턴트:</span>
+                    <span style="color: #364C84; font-weight: bold;">🤖 AI 어시스턴트:</span>
                 </div>
                 <div>답변을 생성하고 있습니다...</div>
             `;
@@ -5128,7 +5124,7 @@
 
                 responseDiv.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <span style="color: #2196F3; font-weight: bold;">🤖 AI 어시스턴트:</span>
+                        <span style="color: #364C84; font-weight: bold;">🤖 AI 어시스턴트:</span>
                     </div>
                     <div>${response}</div>
                 `;
@@ -5531,7 +5527,7 @@
                 content.className = `day-tab-content ${index === 0 ? 'active' : ''}`;
                 content.id = `tab-content-${index}`;
                 content.innerHTML = `
-                    <h4 style="color: #2196F3; margin-bottom: 15px;">Day ${dayNum} - ${dayStr}</h4>
+                    <h4 style="color: #364C84; margin-bottom: 15px;">Day ${dayNum} - ${dayStr}</h4>
                     ${generateDayContent(dayNum, dayStr)}
                 `;
                 contentContainer.appendChild(content);
@@ -5597,7 +5593,7 @@
                 const dayCard = document.createElement('div');
                 dayCard.className = 'modal-day-card';
                 dayCard.innerHTML = `
-                    <h4 style="color: #2196F3; margin-bottom: 15px;">Day ${dayNum} - ${dayStr}</h4>
+                    <h4 style="color: #364C84; margin-bottom: 15px;">Day ${dayNum} - ${dayStr}</h4>
                     ${generateDayContent(dayNum, dayStr)}
                 `;
                 modalBody.appendChild(dayCard);
@@ -5631,7 +5627,7 @@
                 </div>
 
                 <div class="budget-input-group">
-                    <label style="font-weight: 600; color: #2196F3;">💰 일일 예산:</label>
+                    <label style="font-weight: 600; color: #364C84;">💰 일일 예산:</label>
                     <input type="number" placeholder="예산 입력" style="width: 120px;">
                     <span style="color: #666;">원</span>
                 </div>

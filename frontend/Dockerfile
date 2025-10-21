@@ -1,42 +1,36 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
-# Dependencies
-FROM base AS deps
+WORKDIR /app
+
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
 
+# Copy package files first
 COPY package.json package-lock.json* ./
-RUN npm ci
 
-# Builder
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Build arguments - use empty string for API URL to enable nginx proxy
+ARG NEXT_PUBLIC_API_URL=
+ARG NEXT_PUBLIC_WS_URL=
+ARG NEXT_PUBLIC_KAKAO_API_KEY=""
+
+# Environment variables
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+ENV NEXT_PUBLIC_KAKAO_API_KEY=$NEXT_PUBLIC_KAKAO_API_KEY
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED 1
-
+# Build the application
 RUN npm run build
-
-# Runner
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
 
 EXPOSE 3000
 
 ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+# Start Next.js
+CMD ["./node_modules/.bin/next", "start"]

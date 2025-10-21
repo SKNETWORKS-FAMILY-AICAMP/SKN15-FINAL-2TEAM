@@ -1,0 +1,33 @@
+version: '3.8'
+
+# ========================================
+# 인스턴스 2: Frontend (Next.js)
+# ========================================
+# 역할: 웹 UI 렌더링
+# 포트: 3000
+# 의존성: Backend API URL 필요
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: triplan-frontend
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      # AWS 배포 시 실제 Backend 인스턴스 IP/도메인으로 변경
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+      - NEXT_PUBLIC_KAKAO_API_KEY=${NEXT_PUBLIC_KAKAO_API_KEY}
+    volumes:
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge

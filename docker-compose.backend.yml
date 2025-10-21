@@ -1,0 +1,46 @@
+version: '3.8'
+
+# ========================================
+# 인스턴스 3: Backend API (Django/Gunicorn)
+# ========================================
+# 역할: REST API 서버
+# 포트: 8000
+# 의존성: PostgreSQL, Redis 인스턴스 IP 필요
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 300 --graceful-timeout 300"
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      # AWS 배포 시 실제 DB, Redis 인스턴스 IP로 변경
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ./backend:/app
+      - ./data/static:/app/staticfiles
+      - ./data/media:/app/media
+      - ./data/exports:/app/exports
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge

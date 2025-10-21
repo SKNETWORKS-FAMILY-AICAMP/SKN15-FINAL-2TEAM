@@ -1,0 +1,30 @@
+version: '3.8'
+
+# ========================================
+# 인스턴스 5: Redis
+# ========================================
+# 역할: 캐시, Channel Layer, 세션 스토어
+# 포트: 6379
+# 의존성: 없음
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: triplan-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge

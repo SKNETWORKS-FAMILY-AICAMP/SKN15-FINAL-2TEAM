@@ -1,0 +1,35 @@
+version: '3.8'
+
+# ========================================
+# 인스턴스 6: PostgreSQL (메인 DB)
+# ========================================
+# 역할: 메인 데이터베이스
+# 포트: 5432
+# 의존성: 없음
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: triplan-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-triplan}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/pgvector-setup.sql:/docker-entrypoint-initdb.d/02-pgvector-setup.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge
