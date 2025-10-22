@@ -225,17 +225,17 @@ echo -e "${CYAN}Docker Compose 파일: $COMPOSE_FILE${NC}"
 echo ""
 
 # 기존 컨테이너 정리
-if docker compose -f "$COMPOSE_FILE" ps -q 2>/dev/null | grep -q .; then
+if docker-compose -f "$COMPOSE_FILE" ps -q 2>/dev/null | grep -q .; then
     echo -e "${YELLOW}기존 컨테이너를 중지하고 제거합니다...${NC}"
-    docker compose -f "$COMPOSE_FILE" down
+    docker-compose -f "$COMPOSE_FILE" down
 fi
 
 # 빌드 및 실행
 echo -e "${YELLOW}Docker 이미지 빌드 중... (시간이 걸릴 수 있습니다)${NC}"
-docker compose -f "$COMPOSE_FILE" build --no-cache
+docker-compose -f "$COMPOSE_FILE" build --no-cache
 
 echo -e "${YELLOW}컨테이너 시작 중...${NC}"
-docker compose -f "$COMPOSE_FILE" up -d
+docker-compose -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo -e "${GREEN}✅ Docker 컨테이너 실행 완료!${NC}"
@@ -243,7 +243,7 @@ echo ""
 
 # 상태 확인
 echo -e "${BLUE}컨테이너 상태:${NC}"
-docker compose -f "$COMPOSE_FILE" ps
+docker-compose -f "$COMPOSE_FILE" ps
 echo ""
 
 # 로그 확인 옵션
