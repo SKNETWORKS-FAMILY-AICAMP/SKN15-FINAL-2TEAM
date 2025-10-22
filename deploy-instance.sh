@@ -204,13 +204,13 @@ if [ "$NEEDS_ENV" = true ]; then
 
         echo ""
         echo -e "${YELLOW}==================================================${NC}"
-        echo -e "${YELLOW}  nano 에디터로 .env 파일을 작성하세요.${NC}"
+        echo -e "${YELLOW}  vim 에디터로 .env 파일을 작성하세요.${NC}"
         echo -e "${CYAN}  직접 모든 환경변수를 입력해야 합니다.${NC}"
         echo -e "${YELLOW}==================================================${NC}"
-        echo -e "${YELLOW}  저장: Ctrl+O, Enter / 종료: Ctrl+X${NC}"
+        echo -e "${YELLOW}  편집 모드: i키 / 저장 후 종료: ESC → :wq${NC}"
         echo -e "${YELLOW}==================================================${NC}"
         read -p "Enter를 눌러 에디터를 여세요..."
-        nano .env
+        vim .env
 
         echo -e "${GREEN}✅ .env 파일 설정 완료${NC}"
     fi
@@ -252,18 +252,18 @@ echo -e "${CYAN}배포 완료!${NC}"
 echo -e "${CYAN}========================================${NC}"
 echo ""
 echo -e "${GREEN}다음 명령어로 로그를 확인할 수 있습니다:${NC}"
-echo -e "  ${YELLOW}docker compose -f $COMPOSE_FILE logs -f${NC}"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE logs -f${NC}"
 echo ""
 echo -e "${GREEN}컨테이너 재시작:${NC}"
-echo -e "  ${YELLOW}docker compose -f $COMPOSE_FILE restart${NC}"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE restart${NC}"
 echo ""
 echo -e "${GREEN}컨테이너 중지:${NC}"
-echo -e "  ${YELLOW}docker compose -f $COMPOSE_FILE down${NC}"
+echo -e "  ${YELLOW}docker-compose -f $COMPOSE_FILE down${NC}"
 echo ""
 
 read -p "지금 로그를 확인하시겠습니까? (y/N): " show_logs
 if [ "$show_logs" = "y" ] || [ "$show_logs" = "Y" ]; then
-    docker compose -f "$COMPOSE_FILE" logs -f
+    docker-compose -f "$COMPOSE_FILE" logs -f
 fi
 
 echo -e "${GREEN}완료! 🎉${NC}"
