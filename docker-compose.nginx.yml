@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     container_name: triplan-nginx
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      # nginx.conf는 docker-entrypoint.sh가 생성하므로 마운트하지 않음
       - ./data/static:/static
       - ./data/media:/media
     ports:
