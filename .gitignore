@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.env.aws.example
 
 # Python
 __pycache__/
@@ -118,7 +119,7 @@ test_*.sh
 # Claude Code
 .claude/
 
-# 로컬 환경변수 예시
+# 로컬 환경변수 예시 (로컬 개발용)
 .env.example
 backend/.env.example
 
