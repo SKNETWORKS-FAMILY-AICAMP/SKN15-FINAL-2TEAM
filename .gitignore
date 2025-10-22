@@ -94,6 +94,9 @@ ssl/
 /scripts/
 *.sh
 
+# 배포용 스크립트는 Git에 포함
+!deploy-instance.sh
+
 # SSH 키 파일
 *.pem
 *.ppk
