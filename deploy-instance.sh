@@ -196,68 +196,16 @@ if [ "$NEEDS_ENV" = true ]; then
 
     if [ "$create_env" = true ]; then
         echo -e "${YELLOW}.env 파일을 생성합니다.${NC}"
-        echo -e "${CYAN}.env.aws.example을 복사하여 .env를 생성합니다.${NC}"
         echo ""
 
-        # .env.aws.example을 우선적으로 복사 (AWS 배포용)
-        if [ -f .env.aws.example ]; then
-            cp .env.aws.example .env
-            echo -e "${GREEN}✅ .env.aws.example을 .env로 복사했습니다.${NC}"
-        elif [ -f .env.example ]; then
-            cp .env.example .env
-            echo -e "${GREEN}✅ .env.example을 .env로 복사했습니다.${NC}"
-        else
-            echo -e "${RED}⚠️  .env.example 파일이 없습니다!${NC}"
-            echo -e "${YELLOW}기본 템플릿으로 .env를 생성합니다.${NC}"
-            cat > .env << 'EOL'
-# Triplan 환경변수 - 모든 인스턴스 공통 사용
-# 각 인스턴스에 맞게 IP 주소를 수정하세요.
-
-DEBUG=False
-SECRET_KEY=change-this-to-random-50-characters
-
-POSTGRES_DB=lecun2
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=change-this-password
-DATABASE_URL=postgresql://postgres:change-this-password@POSTGRES_PRIVATE_IP:5432/lecun2
-
-REDIS_URL=redis://REDIS_PRIVATE_IP:6379/0
-
-OPENAI_API_KEY=sk-proj-your-openai-api-key
-KAKAO_API_KEY=your-kakao-api-key
-KAKAO_MAP_API_KEY=your-kakao-map-api-key
-
-ALLOWED_HOSTS=NGINX_PUBLIC_IP,localhost
-CORS_ALLOWED_ORIGINS=http://NGINX_PUBLIC_IP,http://localhost:3000
-
-NODE_ENV=production
-NEXT_PUBLIC_API_URL=http://NGINX_PUBLIC_IP
-NEXT_PUBLIC_WS_URL=ws://NGINX_PUBLIC_IP
-NEXT_PUBLIC_KAKAO_API_KEY=your-kakao-javascript-api-key
-
-FRONTEND_HOST=FRONTEND_PRIVATE_IP
-BACKEND_HOST=BACKEND_PRIVATE_IP
-WEBSOCKET_HOST=WEBSOCKET_PRIVATE_IP
-
-AIRFLOW_POSTGRES_PASSWORD=airflow
-AIRFLOW_FERNET_KEY=generate-fernet-key-here
-AIRFLOW_WEBSERVER_SECRET_KEY=generate-secret-key-here
-AIRFLOW_USERNAME=admin
-AIRFLOW_PASSWORD=admin
-EOL
-        fi
+        # 빈 .env 파일 생성
+        touch .env
+        echo -e "${GREEN}✅ 빈 .env 파일을 생성했습니다.${NC}"
 
         echo ""
         echo -e "${YELLOW}==================================================${NC}"
-        echo -e "${YELLOW}  nano 에디터로 .env 파일을 수정하세요.${NC}"
-        echo -e "${YELLOW}  수정 필요한 값들:${NC}"
-        echo -e "${CYAN}  - POSTGRES_PRIVATE_IP (PostgreSQL Private IP)${NC}"
-        echo -e "${CYAN}  - REDIS_PRIVATE_IP (Redis Private IP)${NC}"
-        echo -e "${CYAN}  - NGINX_PUBLIC_IP (Nginx Public IP)${NC}"
-        echo -e "${CYAN}  - FRONTEND_PRIVATE_IP (Frontend Private IP)${NC}"
-        echo -e "${CYAN}  - BACKEND_PRIVATE_IP (Backend Private IP)${NC}"
-        echo -e "${CYAN}  - WEBSOCKET_PRIVATE_IP (WebSocket Private IP)${NC}"
-        echo -e "${CYAN}  - 모든 비밀번호와 API 키${NC}"
+        echo -e "${YELLOW}  nano 에디터로 .env 파일을 작성하세요.${NC}"
+        echo -e "${CYAN}  직접 모든 환경변수를 입력해야 합니다.${NC}"
         echo -e "${YELLOW}==================================================${NC}"
         echo -e "${YELLOW}  저장: Ctrl+O, Enter / 종료: Ctrl+X${NC}"
         echo -e "${YELLOW}==================================================${NC}"
