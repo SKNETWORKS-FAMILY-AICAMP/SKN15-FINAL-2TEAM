@@ -115,16 +115,37 @@ echo -e "${BLUE}[2/6] Docker 설치 확인 중...${NC}"
 if ! command -v docker &> /dev/null; then
     echo -e "${YELLOW}Docker가 없습니다. 설치 중...${NC}"
     sudo apt update
-    sudo apt install -y docker.io docker-compose-plugin
+    sudo apt install -y docker.io
     sudo systemctl start docker
     sudo systemctl enable docker
     sudo usermod -aG docker $USER
     echo -e "${GREEN}✅ Docker 설치 완료${NC}"
+
+    # Docker Compose 설치
+    echo -e "${YELLOW}Docker Compose 설치 중...${NC}"
+    COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+    sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+    echo -e "${GREEN}✅ Docker Compose 설치 완료${NC}"
     echo -e "${YELLOW}⚠️  Docker 그룹 적용을 위해 재로그인이 필요합니다.${NC}"
     echo -e "${YELLOW}   이 스크립트를 종료하고 다시 접속한 후 재실행해주세요.${NC}"
     exit 0
 else
     echo -e "${GREEN}✅ Docker 이미 설치됨${NC}"
+
+    # Docker Compose 확인
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null 2>&1; then
+        echo -e "${YELLOW}Docker Compose가 없습니다. 설치 중...${NC}"
+        COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+        sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+        echo -e "${GREEN}✅ Docker Compose 설치 완료${NC}"
+    else
+        echo -e "${GREEN}✅ Docker Compose 이미 설치됨${NC}"
+    fi
 fi
 echo ""
 
