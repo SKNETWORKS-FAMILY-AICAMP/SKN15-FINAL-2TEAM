@@ -1,0 +1,13 @@
+FROM apache/airflow:2.8.1-python3.10
+
+# 필요 라이브러리 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# DAGs와 Python 스크립트 복사
+COPY dags/ /opt/airflow/dags/
+COPY scripts/ /opt/airflow/scripts/
+
+# (Optional) 사용자 정의 환경 변수 등 설정이 있다면 추가
+
+# 기본 명령 유지
