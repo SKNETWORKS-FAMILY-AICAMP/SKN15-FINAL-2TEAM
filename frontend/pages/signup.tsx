@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Checkbox, FormControlLabel, Link as MuiLink, Alert } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { authAPI } from '../src/services/api';
 import tripAPI from '../src/services/tripAPI';
@@ -89,38 +88,34 @@ export default function Signup() {
       {/* Header */}
       <Box sx={{ bgcolor: '#364C84', py: 2, px: 4, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
         <Box sx={{ maxWidth: 1200, mx: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" passHref>
-            <Typography
-              component="a"
+          <Typography
+            onClick={() => router.push('/')}
+            sx={{
+              color: 'white',
+              fontSize: '2rem',
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            🌍 Triplan
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={() => router.push('/login')}
+              variant="outlined"
               sx={{
                 color: 'white',
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                textDecoration: 'none',
-                cursor: 'pointer',
+                borderColor: 'rgba(255,255,255,0.3)',
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'rgba(255,255,255,0.6)',
+                },
               }}
             >
-              🌍 Triplan
-            </Typography>
-          </Link>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Link href="/login" passHref>
-              <Button
-                component="a"
-                variant="outlined"
-                sx={{
-                  color: 'white',
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  fontWeight: 600,
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    borderColor: 'rgba(255,255,255,0.6)',
-                  },
-                }}
-              >
-                로그인
-              </Button>
-            </Link>
+              로그인
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -340,11 +335,12 @@ export default function Signup() {
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   이미 계정이 있으신가요?{' '}
-                  <Link href="/login" passHref>
-                    <MuiLink sx={{ color: '#364c84', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                      로그인
-                    </MuiLink>
-                  </Link>
+                  <MuiLink
+                    onClick={() => router.push('/login')}
+                    sx={{ color: '#364c84', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                  >
+                    로그인
+                  </MuiLink>
                 </Typography>
               </Box>
             </Box>

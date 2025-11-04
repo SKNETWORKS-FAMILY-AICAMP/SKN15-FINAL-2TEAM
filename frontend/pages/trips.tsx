@@ -18,7 +18,6 @@ import {
   DialogActions,
   TextField,
 } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../src/hooks/useAuth';
 import tripAPI, { TripPlan } from '../src/services/tripAPI';
@@ -27,6 +26,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import Calendar from '../src/components/planner/Calendar';
 
 export default function Trips() {
   const router = useRouter();
@@ -34,12 +34,9 @@ export default function Trips() {
   const [trips, setTrips] = useState<TripPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newTripData, setNewTripData] = useState({
-    title: '',
-    start_date: '',
-    end_date: '',
-    party_size: 1,
-  });
+  const [newTripTitle, setNewTripTitle] = useState('');
+  const [newTripStartDate, setNewTripStartDate] = useState<Date | null>(null);
+  const [newTripEndDate, setNewTripEndDate] = useState<Date | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -67,13 +64,31 @@ export default function Trips() {
     }
   };
 
+  // Date formatting helper
+  const formatDateForDB = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleDateSelect = (start: Date | null, end: Date | null) => {
+    setNewTripStartDate(start);
+    setNewTripEndDate(end);
+  };
+
   const handleCreateTrip = async () => {
+    if (!newTripTitle || !newTripStartDate || !newTripEndDate) {
+      alert('여행 제목과 날짜를 모두 입력해주세요.');
+      return;
+    }
+
     try {
       const newTrip = await tripAPI.createTrip({
-        title: newTripData.title,
-        start_date: newTripData.start_date,
-        end_date: newTripData.end_date,
-        party_size: newTripData.party_size,
+        title: newTripTitle,
+        start_date: formatDateForDB(newTripStartDate),
+        end_date: formatDateForDB(newTripEndDate),
+        party_size: 1, // 기본값 1로 설정
         status: 'draft',
       });
 
@@ -147,21 +162,19 @@ export default function Trips() {
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fa' }}>
       <AppBar position="static" color="transparent" elevation={1} sx={{ bgcolor: 'white', borderBottom: '1px solid #eee' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Link href="/" passHref legacyBehavior>
-            <Typography
-              variant="h6"
-              component="a"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 'bold',
-                fontSize: '1.5rem',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Triplan
-            </Typography>
-          </Link>
+          <Typography
+            onClick={() => router.push('/')}
+            variant="h6"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 'bold',
+              fontSize: '1.5rem',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Triplan
+          </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Typography variant="body1" sx={{ mr: 1, color: '#333' }}>
               {user?.email} 님
@@ -314,49 +327,53 @@ export default function Trips() {
       </Box>
 
       {/* Create Trip Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setNewTripTitle('');
+          setNewTripStartDate(null);
+          setNewTripEndDate(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>새 여행 만들기</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <TextField
               label="여행 제목"
               fullWidth
-              value={newTripData.title}
-              onChange={(e) => setNewTripData({ ...newTripData, title: e.target.value })}
+              value={newTripTitle}
+              onChange={(e) => setNewTripTitle(e.target.value)}
               placeholder="예: 도쿄 여행"
             />
-            <TextField
-              label="출발일"
-              type="date"
-              fullWidth
-              value={newTripData.start_date}
-              onChange={(e) => setNewTripData({ ...newTripData, start_date: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="귀국일"
-              type="date"
-              fullWidth
-              value={newTripData.end_date}
-              onChange={(e) => setNewTripData({ ...newTripData, end_date: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="인원"
-              type="number"
-              fullWidth
-              value={newTripData.party_size}
-              onChange={(e) => setNewTripData({ ...newTripData, party_size: parseInt(e.target.value) })}
-              inputProps={{ min: 1 }}
-            />
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: '#666' }}>
+                여행 날짜 선택
+              </Typography>
+              <Calendar
+                onDateSelect={handleDateSelect}
+                selectedStart={newTripStartDate}
+                selectedEnd={newTripEndDate}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>취소</Button>
+          <Button onClick={() => {
+            setCreateDialogOpen(false);
+            setNewTripTitle('');
+            setNewTripStartDate(null);
+            setNewTripEndDate(null);
+          }}>
+            취소
+          </Button>
           <Button
             onClick={handleCreateTrip}
             variant="contained"
-            disabled={!newTripData.title || !newTripData.start_date || !newTripData.end_date}
+            disabled={!newTripTitle || !newTripStartDate || !newTripEndDate}
           >
             만들기
           </Button>

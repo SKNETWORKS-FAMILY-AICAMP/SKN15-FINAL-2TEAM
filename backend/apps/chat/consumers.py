@@ -4,8 +4,11 @@ from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from .models import ChatRoom, ChatMessage
 from .services import get_bot_service
+from .agent import get_agent
+import logging
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class TripChatConsumer(AsyncWebsocketConsumer):
@@ -46,13 +49,17 @@ class TripChatConsumer(AsyncWebsocketConsumer):
             'members': members
         }))
 
-        # 입장 알림 브로드캐스트
+        # Get current user's member info
+        current_member = await self.get_current_member_info()
+
+        # 입장 알림 브로드캐스트 (to all users in the room)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'user_joined',
                 'user_email': self.user.email,
-                'user_idx': self.user.user_idx
+                'user_idx': self.user.user_idx,
+                'member': current_member  # Include full member info
             }
         )
 
@@ -120,8 +127,8 @@ class TripChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        # 챗봇 트리거 확인 (@봇 멘션 또는 특정 키워드)
-        if self.should_trigger_bot(content):
+        # 챗봇 트리거 확인 (1대1 채팅에서는 항상, 단체 채팅에서는 @봇 멘션 시)
+        if await self.should_trigger_bot(content):
             await self.trigger_chatbot(content)
 
     async def handle_typing(self, data):
@@ -149,9 +156,16 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         """사용자 입장 알림"""
         try:
             await self.send(text_data=json.dumps({
-                'type': 'user_joined',
+                'type': 'member_joined',  # Changed to match frontend expectation
                 'user_email': event['user_email'],
-                'user_idx': event['user_idx']
+                'user_idx': event['user_idx'],
+                'member': event.get('member', {
+                    'user_idx': event['user_idx'],
+                    'email': event['user_email'],
+                    'role': 'member',
+                    'is_online': True,
+                    'is_typing': False
+                })
             }))
         except Exception:
             # Connection already closed, ignore
@@ -161,7 +175,7 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         """사용자 퇴장 알림"""
         try:
             await self.send(text_data=json.dumps({
-                'type': 'user_left',
+                'type': 'member_left',  # Changed to match frontend expectation
                 'user_email': event['user_email'],
                 'user_idx': event['user_idx']
             }))
@@ -199,6 +213,33 @@ class TripChatConsumer(AsyncWebsocketConsumer):
             # Connection already closed, ignore
             pass
 
+    async def planner_updated(self, event):
+        """플래너 데이터 업데이트 알림 (실시간 동기화)"""
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'planner_updated',
+                'updated_by': event.get('updated_by'),
+                'update_type': event.get('update_type', 'trip'),  # 'trip', 'day', 'item'
+                'trip_idx': event.get('trip_idx'),
+                'message': event.get('message', '플래너가 업데이트되었습니다.')
+            }))
+        except Exception:
+            # Connection already closed, ignore
+            pass
+
+    async def map_search(self, event):
+        """지도 검색 명령 (AI가 지도에서 장소 검색하도록 지시)"""
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'map_search',
+                'keyword': event.get('keyword'),
+                'region': event.get('region'),
+                'message': event.get('message', '지도에서 검색 중...')
+            }))
+        except Exception:
+            # Connection already closed, ignore
+            pass
+
     # Helper methods
 
     @database_sync_to_async
@@ -224,27 +265,67 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         )
         return message
 
-    def should_trigger_bot(self, content):
+    @database_sync_to_async
+    def get_room_member_count(self):
+        """채팅방의 멤버 수 가져오기"""
+        try:
+            room = ChatRoom.objects.select_related('trip_idx').get(room_idx=self.room_id)
+            trip = room.trip_idx
+            if trip:
+                return trip.members.count()
+            return 0
+        except Exception as e:
+            logger.error(f"❌ Error getting member count: {e}")
+            return 0
+
+    async def should_trigger_bot(self, content):
         """챗봇을 트리거해야 하는지 확인"""
-        # @봇 또는 @bot 멘션이 있을 때만 응답
+        # 멤버 수 확인
+        member_count = await self.get_room_member_count()
+
+        # 1대1 채팅 (멤버가 1명): 항상 봇 응답
+        if member_count <= 1:
+            return True
+
+        # 단체 채팅: @봇 또는 @bot 멘션이 있을 때만 응답
         return '@봇' in content or '@bot' in content.lower()
 
     async def trigger_chatbot(self, user_message):
-        """챗봇 응답 생성 (OpenAI API 연동)"""
+        """챗봇 응답 생성 (LangChain Agent 연동)"""
         try:
-            # Get conversation history for context
-            conversation_history = await self.get_recent_messages()
+            # Get trip_id from room
+            trip_id = await self.get_trip_id_from_room()
 
-            # Get trip context
-            trip_context = await self.get_trip_context()
+            if not trip_id:
+                error_message = "여행 정보를 찾을 수 없습니다."
+                message = await self.save_bot_message(error_message)
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'bot_message',
+                        'message': {
+                            'message_idx': message.message_idx,
+                            'user_idx': None,
+                            'content': message.content,
+                            'msg_type': message.msg_type,
+                            'created_at': message.created_at.isoformat()
+                        }
+                    }
+                )
+                return
 
-            # Get bot service and generate response
-            bot_service = get_bot_service()
-            bot_response = await bot_service.get_bot_response(
-                user_message=user_message,
-                conversation_history=conversation_history,
-                trip_context=trip_context
+            logger.info(f"🤖 Triggering agent for room={self.room_id}, trip={trip_id}")
+
+            # Run agent in thread pool (agent is sync, not async)
+            import asyncio
+            bot_response = await asyncio.to_thread(
+                self.run_agent_sync,
+                int(self.room_id),
+                trip_id,
+                user_message
             )
+
+            logger.info(f"✅ Agent response received: {bot_response[:100]}...")
 
             # 챗봇 메시지 저장
             message = await self.save_bot_message(bot_response)
@@ -263,9 +344,36 @@ class TripChatConsumer(AsyncWebsocketConsumer):
                     }
                 }
             )
+
+            # Check if agent modified planner - send update notification
+            # (Agent returns success messages or uses keywords like "성공적으로", "추가했습니다" etc)
+            success_indicators = ['✅', '성공적으로', '완료', '추가했습니다', '삭제했습니다', '변경했습니다', '수정했습니다', '이동했습니다', '생성되었습니다', '설정했습니다']
+            action_keywords = ['추가', '수정', '삭제', '변경', '이동', '생성', '설정']
+
+            if any(indicator in bot_response for indicator in success_indicators) and any(keyword in bot_response for keyword in action_keywords):
+                logger.info("📡 Agent modified planner - sending update notification")
+
+                # 날짜 변경 감지
+                update_type = 'item'
+                if ('날짜' in bot_response or 'Day' in bot_response) and any(word in bot_response for word in ['변경', '설정', '생성']):
+                    update_type = 'dates_changed'
+                    logger.info("📅 Date change detected - frontend will reload trip data")
+
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'planner_updated',
+                        'updated_by': 'Agent',
+                        'update_type': update_type,
+                        'trip_idx': trip_id,
+                        'message': bot_response
+                    }
+                )
+
         except Exception as e:
+            logger.error(f"❌ Agent error: {e}", exc_info=True)
             # Send error message if bot fails
-            error_message = "죄송합니다. 일시적으로 응답할 수 없습니다."
+            error_message = f"죄송합니다. 오류가 발생했습니다: {str(e)}"
             message = await self.save_bot_message(error_message)
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -280,6 +388,11 @@ class TripChatConsumer(AsyncWebsocketConsumer):
                     }
                 }
             )
+
+    def run_agent_sync(self, room_id: int, trip_id: int, user_message: str) -> str:
+        """Run agent synchronously in thread pool"""
+        agent = get_agent(room_id, trip_id)
+        return agent.run(user_message)
 
     @database_sync_to_async
     def save_bot_message(self, content, payload_json=None):
@@ -315,6 +428,39 @@ class TripChatConsumer(AsyncWebsocketConsumer):
             return []
 
     @database_sync_to_async
+    def get_current_member_info(self):
+        """현재 사용자의 멤버 정보 가져오기"""
+        try:
+            room = ChatRoom.objects.select_related('trip_idx').get(room_idx=self.room_id)
+            trip = room.trip_idx
+            if trip:
+                member = trip.members.filter(user_idx=self.user).first()
+                if member:
+                    return {
+                        'user_idx': member.user_idx.user_idx,
+                        'email': member.user_idx.email,
+                        'role': member.role,
+                        'is_online': True,
+                        'is_typing': False
+                    }
+            return {
+                'user_idx': self.user.user_idx,
+                'email': self.user.email,
+                'role': 'member',
+                'is_online': True,
+                'is_typing': False
+            }
+        except Exception as e:
+            logger.error(f"Error getting current member info: {e}")
+            return {
+                'user_idx': self.user.user_idx,
+                'email': self.user.email,
+                'role': 'member',
+                'is_online': True,
+                'is_typing': False
+            }
+
+    @database_sync_to_async
     def get_recent_messages(self, limit=10):
         """최근 메시지 가져오기 (대화 컨텍스트용)"""
         room = ChatRoom.objects.get(room_idx=self.room_id)
@@ -344,3 +490,15 @@ class TripChatConsumer(AsyncWebsocketConsumer):
             }
         except Exception:
             return {}
+
+    @database_sync_to_async
+    def get_trip_id_from_room(self):
+        """채팅방에서 trip_id 가져오기"""
+        try:
+            room = ChatRoom.objects.select_related('trip_idx').get(room_idx=self.room_id)
+            if room.trip_idx:
+                return room.trip_idx.trip_idx
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error getting trip_id: {e}")
+            return None

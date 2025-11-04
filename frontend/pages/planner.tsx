@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Calendar from '../src/components/planner/Calendar';
 import WeatherWidget from '../src/components/planner/WeatherWidget';
@@ -22,7 +21,8 @@ import TimelineView from '../src/components/planner/TimelineView';
 import ScheduleModal from '../src/components/planner/ScheduleModal';
 import UnifiedChatWidget from '../src/components/planner/UnifiedChatWidget';
 import InviteCodeModal from '../src/components/planner/InviteCodeModal';
-import KakaoMap from '../src/components/planner/KakaoMap';
+import KakaoMapSearch, { KakaoMapSearchHandle } from '../src/components/KakaoMapSearch';
+import PlaceSearchSidebar from '../src/components/planner/PlaceSearchSidebar';
 import {
   ScheduleItem,
   TripData,
@@ -35,22 +35,27 @@ import commonAPI, { Region1 } from '../src/services/commonAPI';
 import { useAuth } from '../src/hooks/useAuth';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import SaveIcon from '@mui/icons-material/Save';
+import IconButton from '@mui/material/IconButton';
 import {
   savePlannerSession,
   loadPlannerSession,
   clearPlannerSession,
+  getPlannerSummaryForAgent,
+  backupToLocalStorage,
+  restoreFromLocalStorage,
 } from '../src/utils/plannerStorage';
 
 const steps = [
   { id: 1, title: '날짜 확인', desc: '여행 기간 설정' },
-  { id: 2, title: '일차별 계획', desc: '장소 및 일정' },
-  { id: 3, title: '여행지 정보', desc: '날씨 및 필수정보' },
+  { id: 2, title: '여행지 정보', desc: '날씨 및 필수정보' },
+  { id: 3, title: '일차별 계획', desc: '장소 및 일정' },
   { id: 4, title: '미리보기', desc: '최종 확인' },
 ];
 
 export default function Planner() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
+  const hasJoinedRef = useRef(false); // Track if user has already joined
 
   const [activeStep, setActiveStep] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -63,6 +68,12 @@ export default function Planner() {
   const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
   const [editingItem, setEditingItem] = useState<ScheduleItem | undefined>(undefined);
   const [selectedDestination, setSelectedDestination] = useState<string>('도쿄');
+
+  // Location selection
+  const [selectedCountry, setSelectedCountry] = useState<number | null>(null);
+  const [selectedRegion1, setSelectedRegion1] = useState<number | null>(null);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [region1List, setRegion1List] = useState<any[]>([]);
   const [cities, setCities] = useState<Region1[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
 
@@ -74,6 +85,144 @@ export default function Planner() {
   // Invite modal
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
+  // Place search sidebar
+  const [searchSidebarOpen, setSearchSidebarOpen] = useState(false);
+  const [searchTargetDay, setSearchTargetDay] = useState<number | undefined>(undefined);
+
+  // Selected day for adding places
+  const [selectedDayNo, setSelectedDayNo] = useState<number | null>(null);
+
+  // Map reference for chatbot integration
+  const [recommendedPlaces, setRecommendedPlaces] = useState<string[]>([]);
+  const [recommendationPanelVisible, setRecommendationPanelVisible] = useState(false); // 패널 표시 여부
+  const [recommendationPanelExpanded, setRecommendationPanelExpanded] = useState(true); // 패널 확장 여부
+  const [recommendationDetails, setRecommendationDetails] = useState<any[]>([]);
+  const kakaoMapRef = useRef<KakaoMapSearchHandle>(null);
+
+  // 사용자 만족도
+  const [userSatisfaction, setUserSatisfaction] = useState<'like' | 'dislike' | null>(null);
+  const [satisfactionSubmitted, setSatisfactionSubmitted] = useState(false);
+
+  // 챗봇 메시지에서 장소 추천을 파싱하는 함수 (상세 정보 포함)
+  const parseRecommendedPlaces = (message: string): { places: string[], details: any[] } => {
+    const places: string[] = [];
+    const details: any[] = [];
+
+    // JSON 배열 추출 시도 (에이전트가 recommend_places 도구 결과를 포함한 경우)
+    try {
+      const jsonMatch = message.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        const jsonData = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(jsonData) && jsonData.length > 0) {
+          jsonData.forEach((place: any, index: number) => {
+            places.push(place.name);
+            details.push({
+              name: place.name,
+              description: place.address || place.category || '추천 장소입니다.',
+              index: index + 1,
+              rating: place.rating,
+              reviews: place.reviews,
+              phone: place.phone,
+              website: place.website,
+            });
+          });
+          console.log('✅ JSON에서 장소 추출 성공:', places.length, '개');
+          return { places, details };
+        }
+      }
+    } catch (e) {
+      console.log('JSON 파싱 실패, 마크다운 파싱 시도:', e);
+    }
+
+    // 패턴: "1. **장소명**: 설명" 형식
+    const numberedPattern = /(\d+)\.\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g;
+    let match;
+    while ((match = numberedPattern.exec(message)) !== null) {
+      const placeName = match[2].trim();
+      const description = match[3].trim();
+
+      places.push(placeName);
+      details.push({
+        name: placeName,
+        description: description,
+        index: parseInt(match[1])
+      });
+    }
+
+    // 대체 패턴: "1. 장소명: 설명" 형식
+    if (places.length === 0) {
+      const simplePattern = /(\d+)[.)]\s*([^:：\n]+)[：:]?\s*([^\n]*)/g;
+      while ((match = simplePattern.exec(message)) !== null) {
+        const placeName = match[2].trim();
+        const description = match[3].trim();
+
+        if (placeName.length > 0 && placeName.length < 50) {
+          places.push(placeName);
+          details.push({
+            name: placeName,
+            description: description || '추천 장소입니다.',
+            index: parseInt(match[1])
+          });
+        }
+      }
+    }
+
+    console.log('📍 추출된 장소:', places);
+    console.log('📝 상세 정보:', details);
+    return { places, details };
+  };
+
+  // 챗봇 명령어 파싱: "첫째날에 서울역 스타벅스 추가해"
+  const parseChatbotCommand = (message: string): { action: string; day?: number; place?: string } | null => {
+    const lowerMsg = message.toLowerCase();
+
+    // "X일차" 또는 "X째날" 패턴
+    const dayPatterns = [
+      /(\d+)일차/,
+      /(\d+)째\s*날/,
+      /첫\s*째\s*날|첫날|1일차/,
+      /둘\s*째\s*날|2일차/,
+      /셋\s*째\s*날|3일차/,
+    ];
+
+    let dayNumber: number | undefined;
+    for (const pattern of dayPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        if (match[1]) {
+          dayNumber = parseInt(match[1]);
+        } else if (message.includes('첫')) {
+          dayNumber = 1;
+        } else if (message.includes('둘')) {
+          dayNumber = 2;
+        } else if (message.includes('셋')) {
+          dayNumber = 3;
+        }
+        break;
+      }
+    }
+
+    // "추가" 명령어
+    if (lowerMsg.includes('추가')) {
+      // "서울역 스타벅스" 같은 장소명 추출
+      const addPatterns = [
+        /에\s+([^\s]+(?:\s+[^\s]+)*?)\s+추가/,
+        /(\S+(?:\s+\S+)*?)\s+추가/,
+      ];
+
+      for (const pattern of addPatterns) {
+        const match = message.match(pattern);
+        if (match && match[1]) {
+          const place = match[1].trim();
+          console.log('🤖 챗봇 명령어 파싱:', { action: 'add', day: dayNumber, place });
+          return { action: 'add', day: dayNumber, place };
+        }
+      }
+    }
+
+    return null;
+  };
+
   // Session management
   const [isDirty, setIsDirty] = useState(false); // 저장되지 않은 변경사항 여부
   const [isSaving, setIsSaving] = useState(false);
@@ -81,25 +230,75 @@ export default function Planner() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true); // 초기 로드 여부
 
-  // Load cities from database
+  // 챗봇/에이전트가 접근할 수 있도록 전역 함수 노출
   useEffect(() => {
-    const loadCities = async () => {
+    if (typeof window !== 'undefined') {
+      (window as any).getPlannerData = (targetTripId?: number | null) => {
+        const id = targetTripId !== undefined ? targetTripId : tripId;
+        return getPlannerSummaryForAgent(id);
+      };
+      (window as any).backupPlannerData = (targetTripId?: number | null) => {
+        const id = targetTripId !== undefined ? targetTripId : tripId;
+        backupToLocalStorage(id);
+      };
+      (window as any).restorePlannerData = (targetTripId?: number | null) => {
+        const id = targetTripId !== undefined ? targetTripId : tripId;
+        return restoreFromLocalStorage(id);
+      };
+      console.log('✅ Planner API functions exposed to window object for chatbot/agent');
+    }
+  }, [tripId]);
+
+  // Load countries and regions from database
+  useEffect(() => {
+    const loadLocationData = async () => {
       try {
         setIsLoadingCities(true);
+
+        // Load countries
+        const countriesData = await commonAPI.getCountries();
+        setCountries(countriesData);
+        console.log('🌍 Loaded countries:', countriesData.length);
+
+        // Load all cities for now (can be filtered by country later)
         const citiesData = await commonAPI.getCities();
         setCities(citiesData);
+        setRegion1List(citiesData);
         console.log('📍 Loaded cities from database:', citiesData.length);
       } catch (error) {
-        console.error('Failed to load cities:', error);
-        // Fallback to empty array
+        console.error('Failed to load location data:', error);
+        setCountries([]);
         setCities([]);
+        setRegion1List([]);
       } finally {
         setIsLoadingCities(false);
       }
     };
 
-    loadCities();
+    loadLocationData();
   }, []);
+
+  // Filter Region1 when country changes
+  useEffect(() => {
+    const filterRegion1 = async () => {
+      if (selectedCountry) {
+        try {
+          const filtered = await commonAPI.getCitiesByCountry(selectedCountry);
+          setRegion1List(filtered);
+          console.log(`🏙️ Filtered cities for country ${selectedCountry}:`, filtered.length);
+        } catch (error) {
+          console.error('Failed to filter cities:', error);
+          setRegion1List([]);
+        }
+      } else {
+        // If no country selected, show all
+        setRegion1List(cities);
+      }
+    };
+
+    filterRegion1();
+  }, [selectedCountry, cities]);
+
 
   // Load trip from URL using invite code only
   useEffect(() => {
@@ -136,6 +335,21 @@ export default function Planner() {
           setTravelers(trip.party_size?.toString() || '');
           setSelectedDestination(trip.title || '도쿄');
 
+          // Restore destination info
+          if (trip.country_idx) {
+            setSelectedCountry(trip.country_idx);
+          }
+          if (trip.region1_idx) {
+            setSelectedRegion1(trip.region1_idx);
+          }
+
+          // Load user satisfaction
+          if (trip.user_satisfaction) {
+            setUserSatisfaction(trip.user_satisfaction);
+            setSatisfactionSubmitted(true);
+            console.log('✅ Loaded user satisfaction:', trip.user_satisfaction);
+          }
+
           // Clear dirty flag - data just loaded from DB
           setIsDirty(false);
           clearPlannerSession(trip.trip_idx);
@@ -145,7 +359,21 @@ export default function Planner() {
           if (loadError.response?.status === 403) {
             console.log('🔑 Not a member yet, attempting to join with invite code...');
 
+            // Prevent duplicate join attempts using both ref and localStorage
+            const joinKey = `joined_${inviteCodeParam}`;
+            const alreadyJoined = hasJoinedRef.current || localStorage.getItem(joinKey);
+
+            if (alreadyJoined) {
+              console.log('⚠️ Already joined this trip, skipping duplicate join attempt');
+              setIsLoadingTrip(false);
+              return;
+            }
+
             try {
+              // Mark as joining to prevent race conditions
+              hasJoinedRef.current = true;
+              localStorage.setItem(joinKey, 'true');
+
               // Join the trip using the invite code
               const joinResult = await tripAPI.joinByCode(inviteCodeParam);
               console.log('✅ Successfully joined trip:', joinResult);
@@ -165,6 +393,21 @@ export default function Planner() {
               setTravelers(trip.party_size?.toString() || '');
               setSelectedDestination(trip.title || '도쿄');
 
+              // Restore destination info
+              if (trip.country_idx) {
+                setSelectedCountry(trip.country_idx);
+              }
+              if (trip.region1_idx) {
+                setSelectedRegion1(trip.region1_idx);
+              }
+
+              // Load user satisfaction
+              if (trip.user_satisfaction) {
+                setUserSatisfaction(trip.user_satisfaction);
+                setSatisfactionSubmitted(true);
+                console.log('✅ Loaded user satisfaction:', trip.user_satisfaction);
+              }
+
               // Clear dirty flag - data just loaded from DB
               setIsDirty(false);
               clearPlannerSession(trip.trip_idx);
@@ -173,6 +416,9 @@ export default function Planner() {
               alert('여행에 성공적으로 참여했습니다!');
             } catch (joinError: any) {
               console.error('Failed to join trip:', joinError);
+              // Reset on error
+              hasJoinedRef.current = false;
+              localStorage.removeItem(joinKey);
               throw joinError; // Re-throw to outer catch
             }
           } else {
@@ -180,18 +426,36 @@ export default function Planner() {
           }
         }
       } catch (error: any) {
-        console.error('Failed to load trip:', error);
+        console.error('❌ Failed to load trip:', error);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error status type:', typeof error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Invite code:', inviteCodeParam);
 
-        // Show error message to user
+        // If not authenticated (401), redirect to login with return URL
+        if (error.response?.status === 401) {
+          console.log('🔐 Not authenticated, redirecting to login...');
+          // Save the invite code URL to return after login
+          if (inviteCodeParam) {
+            const returnUrl = `/planner?inviteCode=${inviteCodeParam}`;
+            router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+          } else {
+            router.push('/login');
+          }
+          return;
+        }
+
+        // Show error message to user for other errors
         if (error.response?.status === 403) {
           alert('이 여행에 접근 권한이 없습니다.');
         } else if (error.response?.status === 404) {
           alert('유효하지 않거나 만료된 초대 코드입니다.');
         } else {
-          alert('여행 정보를 불러올 수 없습니다.');
+          alert(`여행 정보를 불러올 수 없습니다. (에러: ${error.response?.status || 'unknown'})`);
         }
 
-        // Redirect to mypage
+        // Redirect to mypage for other errors
         router.push('/mypage');
       } finally {
         setIsLoadingTrip(false);
@@ -201,23 +465,128 @@ export default function Planner() {
     loadTrip();
   }, [router]);
 
+  // Load days data and restore dates when trip is loaded
+  const loadDaysData = async () => {
+    if (!tripId) {
+      console.log('⚠️ No tripId, skipping days load');
+      return;
+    }
+
+    try {
+      console.log('🔄 Loading days for trip:', tripId);
+
+      // Reload trip info to get latest data
+      const trip = await tripAPI.getTrip(tripId);
+      setCurrentTrip(trip);
+
+      // Update dates and destination
+      if (trip.start_date && trip.end_date) {
+        setStartDate(parseDateFromDB(trip.start_date));
+        setEndDate(parseDateFromDB(trip.end_date));
+      }
+      if (trip.party_size) {
+        setTravelers(trip.party_size.toString());
+      }
+      if (trip.title) {
+        setSelectedDestination(trip.title);
+      }
+      if (trip.country_idx) {
+        setSelectedCountry(trip.country_idx);
+      }
+      if (trip.region1_idx) {
+        setSelectedRegion1(trip.region1_idx);
+      }
+
+      const daysData = await tripAPI.getDays(tripId);
+      console.log('✅ Days data loaded:', daysData);
+
+      if (daysData && Array.isArray(daysData) && daysData.length > 0) {
+        // Convert API data to tripData format
+        const newTripData: TripData = {};
+
+        // Load items for each day (don't pre-initialize to avoid reference sharing)
+        for (const day of daysData) {
+          try {
+            const items = await tripAPI.getItems(day.day_idx);
+            console.log(`📋 Loading items for Day ${day.day_no} (day_idx: ${day.day_idx}):`, items);
+
+            // Map items to schedule format (ScheduleItem type)
+            // IMPORTANT: Always create a NEW array for each day
+            if (items && Array.isArray(items) && items.length > 0) {
+              newTripData[day.day_no] = items.map((item: any) => {
+                // Remove seconds from time if present (HH:MM:SS -> HH:MM)
+                let time = item.start_time || '';
+                if (time && time.length === 8) {
+                  time = time.substring(0, 5); // "09:00:00" -> "09:00"
+                }
+
+                return {
+                  time,
+                  location: item.title || '',
+                  description: item.notes || '',
+                  icon: '📍',
+                };
+              });
+              console.log(`✅ Loaded ${items.length} items for Day ${day.day_no}`, newTripData[day.day_no]);
+            } else {
+              // Create a NEW empty array for each day (don't reuse)
+              newTripData[day.day_no] = [];
+              console.log(`📝 No items for Day ${day.day_no} - created empty array`);
+            }
+          } catch (error) {
+            console.error(`❌ Failed to load items for Day ${day.day_no}:`, error);
+            // Create a NEW empty array for this day
+            newTripData[day.day_no] = [];
+          }
+        }
+
+        console.log('📝 Final tripData:', JSON.stringify(newTripData, null, 2));
+        console.log('📝 Verifying each day has unique array:');
+        Object.keys(newTripData).forEach(dayNo => {
+          console.log(`  Day ${dayNo}: ${newTripData[Number(dayNo)].length} items`);
+        });
+
+        setTripData(newTripData);
+        setIsDirty(false); // 데이터 로드 후 dirty 플래그 초기화
+      } else {
+        // No days found - initialize empty tripData
+        console.log('📝 No days found, initializing empty tripData');
+        setTripData({});
+      }
+    } catch (error) {
+      console.error('❌ Failed to load days:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadDaysData();
+  }, [tripId]);
+
   useEffect(() => {
     if (startDate && endDate) {
       const days: DayPlan[] = [];
       const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      console.log('🔄 Building dayPlans from tripData:', tripData);
 
       for (let i = 0; i < totalDays; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
         const dayNumber = i + 1;
 
+        // Deep copy schedules to prevent reference sharing
+        const schedulesForDay = tripData[dayNumber] ? [...tripData[dayNumber]] : [];
+
+        console.log(`  Day ${dayNumber}: ${schedulesForDay.length} schedules`, schedulesForDay);
+
         days.push({
           dayNumber,
           date: formatDateForDisplay(date),
-          schedules: tripData[dayNumber] || [],
+          schedules: schedulesForDay,
         });
       }
 
+      console.log('✅ Final dayPlans:', days);
       setDayPlans(days);
     }
   }, [startDate, endDate, tripData]);
@@ -265,16 +634,36 @@ export default function Planner() {
     setEndDate(end);
     setIsDirty(true); // Mark as dirty when dates change
 
-    // Initialize tripData with empty arrays for each day
+    // Update tripData while preserving existing data
     if (start && end) {
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      console.log('📅 Creating', days, 'days');
-      const newTripData: TripData = {};
-      for (let i = 1; i <= days; i++) {
-        newTripData[i] = [];
-      }
-      console.log('📊 New tripData:', newTripData);
-      setTripData(newTripData);
+      const newDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      console.log('📅 New trip duration:', newDays, 'days');
+
+      setTripData((prevTripData) => {
+        const newTripData: TripData = {};
+        const existingDays = Object.keys(prevTripData).length;
+
+        // Copy existing days (preserve data)
+        for (let i = 1; i <= newDays; i++) {
+          if (prevTripData[i]) {
+            // Day already exists - keep its data
+            newTripData[i] = [...prevTripData[i]];
+            console.log(`📝 Preserved Day ${i} data (${prevTripData[i].length} items)`);
+          } else {
+            // New day - create empty array
+            newTripData[i] = [];
+            console.log(`➕ Created new Day ${i}`);
+          }
+        }
+
+        // Days beyond newDays are automatically excluded (deleted)
+        if (newDays < existingDays) {
+          console.log(`🗑️ Removed days ${newDays + 1} to ${existingDays} (trip duration decreased)`);
+        }
+
+        console.log('📊 Updated tripData:', newTripData);
+        return newTripData;
+      });
     } else {
       console.log('⚠️ No start or end date provided');
     }
@@ -305,11 +694,32 @@ export default function Planner() {
 
   const handleDeleteSchedule = (dayNumber: number, itemIndex: number) => {
     if (window.confirm('이 일정을 삭제하시겠습니까?')) {
+      console.log(`🗑️ Deleting schedule: Day ${dayNumber}, Index ${itemIndex}`);
+
       setTripData((prev: TripData) => {
-        const newData = { ...prev };
+        // Deep copy: copy object AND all arrays
+        const newData: TripData = {};
+        Object.keys(prev).forEach(key => {
+          const dayNo = Number(key);
+          newData[dayNo] = [...prev[dayNo]]; // Create NEW array for each day
+        });
+
+        // Ensure the day exists
+        if (!newData[dayNumber]) {
+          console.warn(`⚠️ Day ${dayNumber} not found in tripData`);
+          return prev;
+        }
+
+        console.log(`📋 Before delete - Day ${dayNumber} items:`, newData[dayNumber].length);
+
+        // Filter out the item at the specified index
         newData[dayNumber] = newData[dayNumber].filter((_: ScheduleItem, index: number) => index !== itemIndex);
+
+        console.log(`✅ After delete - Day ${dayNumber} items:`, newData[dayNumber].length);
+
         return newData;
       });
+
       setIsDirty(true); // Mark as dirty when schedule is deleted
     }
   };
@@ -318,7 +728,13 @@ export default function Planner() {
     const targetDay = dayNumber || selectedDay || 1;
 
     setTripData((prev: TripData) => {
-      const newData = { ...prev };
+      // Deep copy: copy object AND all arrays
+      const newData: TripData = {};
+      Object.keys(prev).forEach(key => {
+        const dayNo = Number(key);
+        newData[dayNo] = [...prev[dayNo]]; // Create NEW array for each day
+      });
+
       if (!newData[targetDay]) newData[targetDay] = [];
 
       if (editingItem) {
@@ -333,6 +749,7 @@ export default function Planner() {
         newData[targetDay].sort((a: ScheduleItem, b: ScheduleItem) => a.time.localeCompare(b.time));
       }
 
+      console.log(`📝 handleSaveSchedule - Day ${targetDay} now has ${newData[targetDay].length} items`);
       return newData;
     });
 
@@ -354,10 +771,19 @@ export default function Planner() {
     }
 
     if (window.confirm(`Day ${dayNumber - 1}의 일정을 복사하시겠습니까?`)) {
-      setTripData((prev: TripData) => ({
-        ...prev,
-        [dayNumber]: [...prevDaySchedules],
-      }));
+      setTripData((prev: TripData) => {
+        // Deep copy: copy object AND all arrays
+        const newData: TripData = {};
+        Object.keys(prev).forEach(key => {
+          const dayNo = Number(key);
+          newData[dayNo] = [...prev[dayNo]]; // Create NEW array for each day
+        });
+
+        // Copy schedules from previous day
+        newData[dayNumber] = [...prevDaySchedules];
+
+        return newData;
+      });
       setIsDirty(true); // Mark as dirty when schedule is copied
     }
   };
@@ -414,6 +840,25 @@ export default function Planner() {
     }
   };
 
+  // 사용자 만족도 제출
+  const handleSubmitSatisfaction = async (satisfaction: 'like' | 'dislike') => {
+    if (!tripId) {
+      alert('여행 정보를 불러올 수 없습니다.');
+      return;
+    }
+
+    try {
+      setUserSatisfaction(satisfaction);
+      await tripAPI.submitSatisfaction(tripId, satisfaction);
+      console.log(`✅ 만족도 제출 성공: ${satisfaction} for trip ${tripId}`);
+      setSatisfactionSubmitted(true);
+      alert('소중한 의견 감사합니다! 😊');
+    } catch (error) {
+      console.error('❌ 만족도 제출 실패:', error);
+      alert('만족도 제출에 실패했습니다.');
+    }
+  };
+
   /**
    * 수동 저장: DB에 실제로 저장
    */
@@ -440,47 +885,91 @@ export default function Planner() {
         tripData,
       });
 
-      // 1. Update trip basic info (dates, party_size, title)
+      // 1. Update trip basic info (dates, party_size, title, destination)
       const updatedTrip = await tripAPI.updateTrip(tripId, {
         start_date: formatDateForDB(startDate),
         end_date: formatDateForDB(endDate),
         party_size: parseInt(travelers) || 1,
         title: selectedDestination,
+        country_idx: selectedCountry || undefined,
+        region1_idx: selectedRegion1 || undefined,
       });
 
       console.log('✅ Trip info updated:', updatedTrip);
 
-      // 2. Delete existing days for this trip
+      // 2. Get existing days
       const existingDays = await tripAPI.getDays(tripId);
       console.log('📋 Found existing days:', existingDays);
       console.log('📋 Existing days count:', existingDays?.length);
 
-      if (existingDays && Array.isArray(existingDays)) {
-        for (const day of existingDays) {
-          try {
-            console.log(`🗑️ Deleting Day ${day.day_no} (day_idx: ${day.day_idx})`);
-            await tripAPI.deleteDay(day.day_idx);
-            console.log(`✅ Deleted Day ${day.day_no}`);
-          } catch (deleteError: any) {
-            console.error(`❌ Failed to delete Day ${day.day_no}:`, deleteError);
-            // Continue deleting other days even if one fails
-          }
-        }
-      } else {
-        console.warn('⚠️ existingDays is not an array:', existingDays);
-      }
-
-      // 3. Create new days based on current dates
+      // 3. Calculate required days based on date range
       const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       const dayMapping: { [dayNo: number]: number } = {}; // dayNo -> day_idx
 
+      // Build expected date map
+      const expectedDates = new Map<number, string>(); // dayNo -> expected date
       for (let i = 0; i < totalDays; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
-        const dayNo = i + 1;
+        expectedDates.set(i + 1, formatDateForDB(date));
+      }
+      console.log('📅 Expected dates:', Object.fromEntries(expectedDates));
 
+      // 4. Delete days with WRONG dates (orphaned from previous date changes)
+      if (existingDays && Array.isArray(existingDays)) {
+        for (const day of existingDays) {
+          const expectedDate = expectedDates.get(day.day_no);
+
+          // Delete if: day_no is out of range OR date doesn't match expected
+          if (!expectedDate || day.date !== expectedDate) {
+            try {
+              console.log(`🗑️ Deleting Day ${day.day_no} (day_idx: ${day.day_idx}) - Wrong date: ${day.date} (expected: ${expectedDate || 'N/A'})`);
+              await tripAPI.deleteDay(day.day_idx);
+              console.log(`✅ Deleted Day ${day.day_no}`);
+            } catch (deleteError: any) {
+              console.error(`❌ Failed to delete Day ${day.day_no}:`, deleteError);
+            }
+          } else {
+            // Keep this day and clear its items only
+            console.log(`♻️ Reusing Day ${day.day_no} (day_idx: ${day.day_idx}) - Date matches: ${day.date}`);
+            dayMapping[day.day_no] = day.day_idx;
+
+            // Delete all existing items for this day (we'll recreate from tripData)
+            try {
+              const existingItems = await tripAPI.getItems(day.day_idx);
+              console.log(`📋 Found ${existingItems.length} existing items for Day ${day.day_no}`);
+
+              for (const item of existingItems) {
+                try {
+                  await tripAPI.deleteItem(item.item_idx);
+                  console.log(`  🗑️ Deleted item ${item.item_idx}`);
+                } catch (deleteItemError) {
+                  console.error(`  ❌ Failed to delete item ${item.item_idx}:`, deleteItemError);
+                }
+              }
+            } catch (getItemsError) {
+              console.error(`❌ Failed to get items for Day ${day.day_no}:`, getItemsError);
+            }
+          }
+        }
+      }
+
+      // 5. Create missing days (days that don't exist yet or were deleted)
+      console.log(`🔄 Creating missing days...`);
+      for (let i = 0; i < totalDays; i++) {
+        const dayNo = i + 1;
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+
+        // Skip if day already exists (and matched date)
+        if (dayMapping[dayNo]) {
+          console.log(`✓ Day ${dayNo} already exists with correct date`);
+          continue;
+        }
+
+        // Create new day
         try {
-          console.log('🔄 Creating day:', {
+          console.log('🔄 Creating new day:', {
             trip_idx: tripId,
             day_no: dayNo,
             date: formatDateForDB(date),
@@ -500,25 +989,57 @@ export default function Planner() {
           throw dayError;
         }
       }
+      console.log('✅ All days processed. Final dayMapping:', dayMapping);
 
-      // 4. Save schedules (tripData) to DB as items
-      for (const dayNo in tripData) {
+      // 6. Save schedules (tripData) to DB as items
+      console.log('📊 Current tripData state:', JSON.stringify(tripData, null, 2));
+
+      for (const dayNoStr in tripData) {
+        const dayNo = parseInt(dayNoStr);
         const schedules = tripData[dayNo];
-        const dayIdx = dayMapping[parseInt(dayNo)];
+        const dayIdx = dayMapping[dayNo];
 
-        if (!dayIdx || !schedules || schedules.length === 0) continue;
+        console.log(`🔄 Processing Day ${dayNo}:`, {
+          dayIdx,
+          schedulesCount: schedules?.length || 0,
+          schedules: schedules
+        });
+
+        if (!dayIdx) {
+          console.warn(`⚠️ No day_idx found for Day ${dayNo}, skipping items`);
+          continue;
+        }
+
+        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+          console.log(`📝 No items to save for Day ${dayNo} (empty or invalid array)`);
+          continue;
+        }
+
+        console.log(`💾 Saving ${schedules.length} items for Day ${dayNo} (day_idx: ${dayIdx})`);
 
         for (let i = 0; i < schedules.length; i++) {
           const schedule = schedules[i];
-          await tripAPI.createItem({
-            day_idx: dayIdx,
-            item_type: 'custom',
+
+          console.log(`  📝 Item ${i + 1}/${schedules.length}:`, {
             title: schedule.location,
-            start_time: schedule.time,
-            notes: schedule.description,
-            order_in_day: i + 1,
-            lock_flag: false,
+            time: schedule.time,
+            description: schedule.description
           });
+
+          try {
+            await tripAPI.createItem({
+              day_idx: dayIdx,
+              item_type: 'custom',
+              title: schedule.location || '제목 없음',
+              start_time: schedule.time || '',
+              notes: schedule.description || '',
+              order_in_day: i + 1,
+              lock_flag: false,
+            });
+            console.log(`  ✅ Created item ${i + 1} for Day ${dayNo}`);
+          } catch (itemError) {
+            console.error(`  ❌ Failed to create item ${i + 1} for Day ${dayNo}:`, itemError);
+          }
         }
 
         console.log(`✅ Saved ${schedules.length} items for Day ${dayNo}`);
@@ -530,6 +1051,12 @@ export default function Planner() {
       setSaveSuccess(true);
 
       console.log('✅ Saved to DB successfully');
+
+      // Reload data from DB to ensure consistency
+      console.log('🔄 Reloading data from DB...');
+      await loadDaysData();
+      console.log('✅ Data reloaded successfully');
+
     } catch (error: any) {
       console.error('❌ Failed to save to DB:', error);
       setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
@@ -539,7 +1066,7 @@ export default function Planner() {
   };
 
   /**
-   * Auto-save to sessionStorage when data changes
+   * Auto-save to sessionStorage when data changes (모든 플래너 정보 저장)
    */
   useEffect(() => {
     // Skip if loading, initial load, or no tripId
@@ -553,26 +1080,54 @@ export default function Planner() {
         endDate,
         travelers,
         selectedDestination,
+        selectedCountry,
+        selectedRegion1,
+        activeStep,
+        viewMode,
+        selectedDay,
+        isDirty,
       });
-      console.log('💾 Auto-saved to sessionStorage');
+      console.log('💾 Auto-saved to sessionStorage (all planner data)');
     }
-  }, [tripData, startDate, endDate, travelers, selectedDestination, isDirty, tripId, isLoadingTrip, isSaving, isInitialLoad]);
+  }, [
+    tripData,
+    startDate,
+    endDate,
+    travelers,
+    selectedDestination,
+    selectedCountry,
+    selectedRegion1,
+    activeStep,
+    viewMode,
+    selectedDay,
+    isDirty,
+    tripId,
+    isLoadingTrip,
+    isSaving,
+    isInitialLoad,
+  ]);
 
 
   /**
-   * Load from sessionStorage on mount
+   * Load from sessionStorage on mount (모든 플래너 정보 복원)
    */
   useEffect(() => {
     if (tripId !== null) {
       const sessionData = loadPlannerSession(tripId);
       if (sessionData) {
-        console.log('🔄 Restoring from session storage...');
+        console.log('🔄 Restoring from session storage (all planner data)...');
         setTripData(sessionData.tripData);
         setStartDate(sessionData.startDate ? new Date(sessionData.startDate) : null);
         setEndDate(sessionData.endDate ? new Date(sessionData.endDate) : null);
         setTravelers(sessionData.travelers);
         setSelectedDestination(sessionData.selectedDestination);
-        setIsDirty(true); // Session data means unsaved changes
+        setSelectedCountry(sessionData.selectedCountry);
+        setSelectedRegion1(sessionData.selectedRegion1);
+        setActiveStep(sessionData.activeStep);
+        setViewMode(sessionData.viewMode);
+        setSelectedDay(sessionData.selectedDay || undefined);
+        setIsDirty(sessionData.isDirty); // Restore dirty state
+        console.log('✅ All planner data restored from session');
       }
     }
   }, [tripId]);
@@ -621,9 +1176,29 @@ export default function Planner() {
       case 1:
         return (
           <Box>
-            <Typography variant="h4" sx={{ color: 'primary.main', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              📅 여행 날짜 확인
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h4" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                📅 여행 날짜 확인
+              </Typography>
+              {tripId && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSaveToDB}
+                  disabled={!isDirty || isSaving}
+                  sx={{
+                    bgcolor: isDirty ? 'primary.main' : 'grey.400',
+                    '&:hover': {
+                      bgcolor: isDirty ? 'primary.dark' : 'grey.500',
+                    },
+                  }}
+                >
+                  {isSaving ? '저장 중...' : isDirty ? '저장' : '저장됨'}
+                </Button>
+              )}
+            </Box>
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
@@ -675,26 +1250,253 @@ export default function Planner() {
             </Box>
 
             <Button variant="contained" fullWidth onClick={handleNextStep} sx={{ mt: 3, py: 1.5 }}>
-              다음 단계 → 일차별 계획
+              다음 단계 → 여행지 정보
             </Button>
           </Box>
         );
 
       case 2:
+        const destInfo = destinationData[selectedDestination];
+        return (
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h4" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                🌍 여행지 정보
+              </Typography>
+              {tripId && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSaveToDB}
+                  disabled={!isDirty || isSaving}
+                  sx={{
+                    bgcolor: isDirty ? 'primary.main' : 'grey.400',
+                    '&:hover': {
+                      bgcolor: isDirty ? 'primary.dark' : 'grey.500',
+                    },
+                  }}
+                >
+                  {isSaving ? '저장 중...' : isDirty ? '저장' : '저장됨'}
+                </Button>
+              )}
+            </Box>
+
+            {/* Country Selection */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>국가 선택</InputLabel>
+              <Select
+                value={selectedCountry || ''}
+                onChange={(e: any) => {
+                  const countryIdx = e.target.value;
+                  setSelectedCountry(countryIdx);
+                  setSelectedRegion1(null); // Reset region1 when country changes
+                  // Find country name
+                  const country = countries.find((c: any) => c.country_idx === countryIdx);
+                  setSelectedDestination(country?.country_name || '');
+                  // Mark as dirty to enable save button
+                  setIsDirty(true);
+                }}
+                label="국가 선택"
+                disabled={isLoadingCities}
+              >
+                {isLoadingCities ? (
+                  <MenuItem disabled>로딩 중...</MenuItem>
+                ) : countries.length > 0 ? (
+                  countries.map((country: any) => (
+                    <MenuItem key={country.country_idx} value={country.country_idx}>
+                      🌍 {country.country_name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>국가 정보를 불러올 수 없습니다</MenuItem>
+                )}
+              </Select>
+            </FormControl>
+
+            {/* Region1 (City) Selection */}
+            {selectedCountry && (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>도시 선택</InputLabel>
+                <Select
+                  value={selectedRegion1 || ''}
+                  onChange={(e: any) => {
+                    const region1Idx = e.target.value;
+                    setSelectedRegion1(region1Idx);
+                    // Find city name
+                    const city = region1List.find((r: any) => r.region1_idx === region1Idx);
+                    if (city) {
+                      setSelectedDestination(`${city.city_name}`);
+                    }
+                    // Mark as dirty to enable save button
+                    setIsDirty(true);
+                  }}
+                  label="도시 선택"
+                >
+                  {region1List.length > 0 ? (
+                    region1List.map((city: any) => (
+                      <MenuItem key={city.region1_idx} value={city.region1_idx}>
+                        🏙️ {city.city_name}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>해당 국가에 도시 정보가 없습니다</MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* 여행지 정보 - 항상 표시 (데이터가 없으면 빈 틀로 표시) */}
+            {selectedCountry && (
+              <>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    📍 기본 정보
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        🗺️ 여행지
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.name || selectedDestination || '-'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        🕐 시차
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.timezone || '-'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        🗣️ 언어
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.language || '-'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {destInfo?.weather && (
+                  <Box sx={{ mb: 3 }}>
+                    <WeatherWidget weather={destInfo.weather} />
+                  </Box>
+                )}
+
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    💡 필수 여행 정보
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        🔌 전압
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.voltage || '-'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        🔌 플러그 타입
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.plugType || '-'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                        💱 환율 정보
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {destInfo?.exchangeRate || '-'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {destInfo?.tips && destInfo.tips.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      💡 여행 팁
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {destInfo.tips.map((tip: any, index: number) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 2,
+                            bgcolor: '#f8f9fa',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #E7F1A5',
+                          }}
+                        >
+                          <Typography sx={{ fontSize: '1.2rem', minWidth: '24px' }}>{tip.icon}</Typography>
+                          <Typography variant="body2" sx={{ color: '#495057', lineHeight: 1.4 }}>
+                            {tip.text}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </>
+            )}
+
+            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+              <Button variant="outlined" onClick={handlePrevStep} sx={{ flex: 1 }}>
+                ← 이전 단계
+              </Button>
+              <Button variant="contained" onClick={handleNextStep} sx={{ flex: 2 }}>
+                다음 단계 → 일차별 계획
+              </Button>
+            </Box>
+          </Box>
+        );
+
+      case 3:
         return (
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h4" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 📋 일차별 상세 계획
               </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={toggleViewMode}
-                sx={{ textTransform: 'none' }}
-              >
-                {viewMode === 'card' ? '📋 타임라인뷰' : '📋 카드뷰'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={toggleViewMode}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {viewMode === 'card' ? '📋 타임라인뷰' : '📋 카드뷰'}
+                </Button>
+                {tripId && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveToDB}
+                    disabled={!isDirty || isSaving}
+                    sx={{
+                      bgcolor: isDirty ? 'primary.main' : 'grey.400',
+                      '&:hover': {
+                        bgcolor: isDirty ? 'primary.dark' : 'grey.500',
+                      },
+                    }}
+                  >
+                    {isSaving ? '저장 중...' : isDirty ? '저장' : '저장됨'}
+                  </Button>
+                )}
+              </Box>
             </Box>
 
             {dayPlans.length === 0 ? (
@@ -716,6 +1518,48 @@ export default function Planner() {
                     schedules={day.schedules}
                     onOpenDetail={handleOpenDayDetail}
                     onCopyPrevDay={handleCopyPrevDay}
+                    onSearchPlace={(dayNum) => {
+                      setSearchTargetDay(dayNum);
+                      setSearchSidebarOpen(true);
+                    }}
+                    isSelected={selectedDayNo === day.dayNumber}
+                    onSelect={(dayNum) => {
+                      if (selectedDayNo === dayNum) {
+                        console.log(`📌 Day ${dayNum} deselected`);
+                        setSelectedDayNo(null);
+                      } else {
+                        console.log(`📌 Day ${dayNum} selected for adding places`);
+                        setSelectedDayNo(dayNum);
+                      }
+                    }}
+                    onUpdateTime={(dayNum, scheduleIndex, newTime) => {
+                      console.log(`⏰ Updating time for Day ${dayNum}, Schedule ${scheduleIndex} to ${newTime}`);
+
+                      setTripData((prev: TripData) => {
+                        // Deep copy
+                        const newData: TripData = {};
+                        Object.keys(prev).forEach(key => {
+                          const dayNo = Number(key);
+                          newData[dayNo] = [...prev[dayNo]];
+                        });
+
+                        // Update time
+                        if (newData[dayNum] && newData[dayNum][scheduleIndex]) {
+                          newData[dayNum][scheduleIndex] = {
+                            ...newData[dayNum][scheduleIndex],
+                            time: newTime
+                          };
+
+                          // Sort by time
+                          newData[dayNum].sort((a, b) => a.time.localeCompare(b.time));
+                        }
+
+                        return newData;
+                      });
+
+                      setIsDirty(true);
+                      console.log(`✅ Time updated successfully`);
+                    }}
                   />
                 ))}
               </Box>
@@ -725,147 +1569,45 @@ export default function Planner() {
                 onEdit={handleEditSchedule}
                 onDelete={handleDeleteSchedule}
                 onAdd={handleOpenScheduleModal}
+                selectedDayNo={selectedDayNo}
+                onSelectDay={(dayNum) => {
+                  if (selectedDayNo === dayNum) {
+                    console.log(`📌 Day ${dayNum} deselected (timeline)`);
+                    setSelectedDayNo(null);
+                  } else {
+                    console.log(`📌 Day ${dayNum} selected (timeline)`);
+                    setSelectedDayNo(dayNum);
+                  }
+                }}
+                onUpdateTime={(dayNum, scheduleIndex, newTime) => {
+                  console.log(`⏰ Updating time (timeline) for Day ${dayNum}, Schedule ${scheduleIndex} to ${newTime}`);
+
+                  setTripData((prev: TripData) => {
+                    // Deep copy
+                    const newData: TripData = {};
+                    Object.keys(prev).forEach(key => {
+                      const dayNo = Number(key);
+                      newData[dayNo] = [...prev[dayNo]];
+                    });
+
+                    // Update time
+                    if (newData[dayNum] && newData[dayNum][scheduleIndex]) {
+                      newData[dayNum][scheduleIndex] = {
+                        ...newData[dayNum][scheduleIndex],
+                        time: newTime
+                      };
+
+                      // Sort by time
+                      newData[dayNum].sort((a, b) => a.time.localeCompare(b.time));
+                    }
+
+                    return newData;
+                  });
+
+                  setIsDirty(true);
+                  console.log(`✅ Time updated successfully (timeline)`);
+                }}
               />
-            )}
-
-            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-              <Button variant="outlined" onClick={handlePrevStep} sx={{ flex: 1 }}>
-                ← 이전 단계
-              </Button>
-              <Button variant="contained" onClick={handleNextStep} sx={{ flex: 2 }}>
-                다음 단계 → 여행지 정보
-              </Button>
-            </Box>
-          </Box>
-        );
-
-      case 3:
-        const destInfo = destinationData[selectedDestination];
-        return (
-          <Box>
-            <Typography variant="h4" sx={{ color: 'primary.main', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              🌍 여행지 정보
-            </Typography>
-
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>여행지 선택</InputLabel>
-              <Select
-                value={selectedDestination}
-                onChange={(e: any) => setSelectedDestination(e.target.value)}
-                label="여행지 선택"
-                disabled={isLoadingCities}
-              >
-                {isLoadingCities ? (
-                  <MenuItem disabled>로딩 중...</MenuItem>
-                ) : cities.length > 0 ? (
-                  cities.map((city) => (
-                    <MenuItem key={city.region1_idx} value={city.city_name}>
-                      📍 {city.city_name}
-                    </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem disabled>도시 정보를 불러올 수 없습니다</MenuItem>
-                )}
-              </Select>
-            </FormControl>
-
-            {destInfo && (
-              <>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    📍 기본 정보
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        🗺️ 여행지
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.name}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        🕐 시차
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.timezone}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        🗣️ 언어
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.language}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <WeatherWidget weather={destInfo.weather} />
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    💡 필수 여행 정보
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        🔌 전압
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.voltage}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        🔌 플러그 타입
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.plugType}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: '#f8f9fa', p: 2, borderRadius: '8px', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                        💱 환율 정보
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {destInfo.exchangeRate}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    💡 여행 팁
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {destInfo.tips.map((tip: any, index: number) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          p: 2,
-                          bgcolor: '#f8f9fa',
-                          borderRadius: '8px',
-                          borderLeft: '4px solid #E7F1A5',
-                        }}
-                      >
-                        <Typography sx={{ fontSize: '1.2rem', minWidth: '24px' }}>{tip.icon}</Typography>
-                        <Typography variant="body2" sx={{ color: '#495057', lineHeight: 1.4 }}>
-                          {tip.text}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              </>
             )}
 
             <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
@@ -882,9 +1624,29 @@ export default function Planner() {
       case 4:
         return (
           <Box>
-            <Typography variant="h4" sx={{ color: 'primary.main', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              ✨ 미리보기
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h4" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                ✨ 미리보기
+              </Typography>
+              {tripId && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSaveToDB}
+                  disabled={!isDirty || isSaving}
+                  sx={{
+                    bgcolor: isDirty ? 'primary.main' : 'grey.400',
+                    '&:hover': {
+                      bgcolor: isDirty ? 'primary.dark' : 'grey.500',
+                    },
+                  }}
+                >
+                  {isSaving ? '저장 중...' : isDirty ? '저장' : '저장됨'}
+                </Button>
+              )}
+            </Box>
 
             <Box
               sx={{
@@ -949,6 +1711,22 @@ export default function Planner() {
                     {travelers || '-'}명
                   </Typography>
                 </Box>
+                <Box>
+                  <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                    여행 국가
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {currentTrip?.country_name || countries.find(c => c.country_idx === selectedCountry)?.country_name || '-'}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                    여행 지역
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {currentTrip?.region1_name || region1List.find(r => r.region1_idx === selectedRegion1)?.region1_name || '-'}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
 
@@ -991,6 +1769,68 @@ export default function Planner() {
               ))}
             </Box>
 
+            {/* 사용자 만족도 수집 */}
+            <Box
+              sx={{
+                bgcolor: 'white',
+                borderRadius: '15px',
+                p: 3,
+                mt: 3,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                textAlign: 'center',
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                이 여행 계획이 마음에 드시나요?
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', mb: 3 }}>
+                여러분의 의견은 더 나은 서비스를 만드는 데 큰 도움이 됩니다
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                <Button
+                  variant={userSatisfaction === 'like' ? 'contained' : 'outlined'}
+                  size="large"
+                  onClick={() => handleSubmitSatisfaction('like')}
+                  disabled={satisfactionSubmitted}
+                  sx={{
+                    minWidth: 120,
+                    bgcolor: userSatisfaction === 'like' ? '#4caf50' : 'transparent',
+                    borderColor: userSatisfaction === 'like' ? '#4caf50' : '#ddd',
+                    color: userSatisfaction === 'like' ? 'white' : '#333',
+                    '&:hover': {
+                      bgcolor: userSatisfaction === 'like' ? '#45a049' : '#f0f0f0',
+                      borderColor: '#4caf50',
+                    },
+                  }}
+                >
+                  👍 좋아요
+                </Button>
+                <Button
+                  variant={userSatisfaction === 'dislike' ? 'contained' : 'outlined'}
+                  size="large"
+                  onClick={() => handleSubmitSatisfaction('dislike')}
+                  disabled={satisfactionSubmitted}
+                  sx={{
+                    minWidth: 120,
+                    bgcolor: userSatisfaction === 'dislike' ? '#f44336' : 'transparent',
+                    borderColor: userSatisfaction === 'dislike' ? '#f44336' : '#ddd',
+                    color: userSatisfaction === 'dislike' ? 'white' : '#333',
+                    '&:hover': {
+                      bgcolor: userSatisfaction === 'dislike' ? '#e53935' : '#f0f0f0',
+                      borderColor: '#f44336',
+                    },
+                  }}
+                >
+                  👎 아쉬워요
+                </Button>
+              </Box>
+              {satisfactionSubmitted && (
+                <Typography variant="body2" sx={{ color: '#4caf50', mt: 2, fontWeight: 500 }}>
+                  ✅ 의견이 제출되었습니다. 감사합니다!
+                </Typography>
+              )}
+            </Box>
+
             <Button variant="outlined" onClick={handlePrevStep} sx={{ mt: 3, px: 4 }}>
               ← 이전 단계
             </Button>
@@ -1006,42 +1846,33 @@ export default function Planner() {
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8f9fa' }}>
       <AppBar position="static" color="transparent" elevation={1} sx={{ bgcolor: 'white', borderBottom: '1px solid #eee' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Link href="/" passHref legacyBehavior>
-            <Typography
-              variant="h6"
-              component="a"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 'bold',
-                fontSize: '1.5rem',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Triplan
-            </Typography>
-          </Link>
+          <Typography
+            onClick={() => router.push('/')}
+            variant="h6"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 'bold',
+              fontSize: '1.5rem',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Triplan
+          </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             {isAuthenticated ? (
               <>
-                {/* Save Button */}
+                {/* Invite Button */}
                 {tripId && (
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="primary"
                     size="small"
-                    startIcon={<SaveIcon />}
-                    onClick={handleSaveToDB}
-                    disabled={!isDirty || isSaving}
-                    sx={{
-                      mr: 1,
-                      bgcolor: isDirty ? 'primary.main' : 'grey.400',
-                      '&:hover': {
-                        bgcolor: isDirty ? 'primary.dark' : 'grey.500',
-                      },
-                    }}
+                    startIcon={<GroupAddIcon />}
+                    onClick={() => setInviteModalOpen(true)}
+                    sx={{ mr: 1 }}
                   >
-                    {isSaving ? '저장 중...' : isDirty ? '저장' : '저장됨'}
+                    초대
                   </Button>
                 )}
                 <Button
@@ -1082,16 +1913,22 @@ export default function Planner() {
               </>
             ) : (
               <>
-                <Link href="/login" passHref legacyBehavior>
-                  <Button variant="outlined" color="primary" size="small" component="a">
-                    로그인
-                  </Button>
-                </Link>
-                <Link href="/signup" passHref legacyBehavior>
-                  <Button variant="contained" color="primary" size="small" component="a">
-                    회원가입
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => router.push('/login')}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                >
+                  로그인
+                </Button>
+                <Button
+                  onClick={() => router.push('/signup')}
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                >
+                  회원가입
+                </Button>
               </>
             )}
           </Box>
@@ -1183,59 +2020,88 @@ export default function Planner() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            p: 2,
           }}
         >
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="h6" sx={{ color: 'primary.main', mb: 0.5 }}>
-              🗺️ {selectedDestination || '여행지를 선택해주세요'}
-            </Typography>
-            {startDate && endDate && (
-              <Typography variant="body2" sx={{ color: '#666' }}>
-                {startDate.toLocaleDateString()} ~ {endDate.toLocaleDateString()}
+          {/* 선택된 Day 안내 */}
+          {selectedDayNo && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: '#364C84',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                📌 Day {selectedDayNo} 선택됨 - 장소 검색 후 + 버튼으로 추가하세요
               </Typography>
-            )}
-          </Box>
-          <Box sx={{ flex: 1, minHeight: 0 }}>
-            <KakaoMap height="100%" />
-          </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setSelectedDayNo(null)}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  '&:hover': {
+                    borderColor: 'white',
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                  },
+                }}
+              >
+                선택 해제
+              </Button>
+            </Box>
+          )}
+          <KakaoMapSearch
+            ref={kakaoMapRef}
+            onPlaceSelect={(place) => {
+              // 장소 클릭 시 지도 위치만 이동, 추가는 안 함
+              console.log('🗺️ 선택된 장소 (위치 이동만):', place.ko_name || place.name);
+              // 지도는 KakaoMapSearch 컴포넌트 내부에서 자동으로 이동됨
+            }}
+            onPlaceAdd={(place) => {
+              if (!selectedDayNo) {
+                console.warn('⚠️ Day가 선택되지 않음');
+                return;
+              }
 
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '20%',
-              left: '30%',
-              fontSize: '3rem',
-              animation: 'bounce 2s infinite',
-              animationDelay: '0s',
+              console.log(`➕ Day ${selectedDayNo}에 장소 추가:`, place);
+
+              // 선택된 장소를 스케줄로 변환
+              const placeTypes = place.types || '';
+              const ratingInfo = place.rating ? `\n평점: ${place.rating}⭐` : '';
+
+              // 해당 Day의 마지막 일정 시간 가져오기
+              const daySchedules = tripData[selectedDayNo] || [];
+              let defaultTime = '09:00'; // 기본 시작 시간
+
+              if (daySchedules.length > 0) {
+                // 마지막 일정의 시간에서 1시간 추가
+                const lastTime = daySchedules[daySchedules.length - 1].time;
+                const [hours, minutes] = lastTime.split(':').map(Number);
+                const nextHour = (hours + 1) % 24;
+                defaultTime = `${String(nextHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+              }
+
+              const newSchedule: ScheduleItem = {
+                time: defaultTime,
+                location: place.ko_name || place.name,
+                description: `${place.address || ''}${placeTypes ? `\n카테고리: ${placeTypes}` : ''}${ratingInfo}`,
+                icon: '📍',
+              };
+
+              handleSaveSchedule(newSchedule, selectedDayNo);
+              console.log(`✅ Day ${selectedDayNo}에 "${newSchedule.location}" 추가 완료 (시간: ${defaultTime})`);
             }}
-          >
-            📍
-          </Box>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              right: '25%',
-              fontSize: '3rem',
-              animation: 'bounce 2s infinite',
-              animationDelay: '0.5s',
-            }}
-          >
-            📍
-          </Box>
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: '25%',
-              left: '40%',
-              fontSize: '3rem',
-              animation: 'bounce 2s infinite',
-              animationDelay: '1s',
-            }}
-          >
-            📍
-          </Box>
+            selectedDayNo={selectedDayNo}
+            initialCenter={{ lat: 37.5665, lng: 126.9780 }}
+            initialZoom={10}
+            recommendedPlaces={recommendedPlaces}
+            tripData={tripData}
+          />
         </Box>
       </Box>
 
@@ -1256,6 +2122,104 @@ export default function Planner() {
           const urlTripId = params.get('tripId');
           return urlTripId ? parseInt(urlTripId) : null;
         })()}
+        onMessage={(message: any) => {
+          // 사용자 메시지일 때 명령어 파싱
+          if (!message.is_bot && message.content) {
+            const command = parseChatbotCommand(message.content);
+            if (command && command.action === 'add' && command.place && command.day) {
+              console.log('📝 사용자가 장소 추가 요청:', command);
+              // 사용자가 직접 명령했을 때는 표시만 하고, 봇 응답을 기다림
+            }
+          }
+
+          // 봇 메시지일 때 처리
+          if (message.is_bot && message.content) {
+            console.log('🤖 챗봇 메시지 수신:', message.content);
+
+            // 장소 추천 파싱 (지도 마커용)
+            const { places, details } = parseRecommendedPlaces(message.content);
+            if (places.length > 0) {
+              console.log('📍 추출된 추천 장소:', places);
+              console.log('📝 추천 상세 정보:', details);
+              setRecommendedPlaces(places);
+              setRecommendationDetails(details);
+              setRecommendationPanelVisible(true); // 하단 패널 표시
+              setRecommendationPanelExpanded(true); // 확장 상태로 오픈
+
+              // 추천 장소가 있으면 채팅창에 마크다운 메시지 표시하지 않음
+              // UI 패널로만 표시하고 메시지 추가를 건너뜀
+              return;
+            }
+
+            // 챗봇 응답에서 장소 추가 명령 확인
+            const command = parseChatbotCommand(message.content);
+            if (command && command.action === 'add' && command.place) {
+              const targetDay = command.day || 1;
+              console.log(`✅ 챗봇이 Day ${targetDay}에 "${command.place}" 추가 확인됨`);
+
+              // 카카오맵 SDK로 장소 검색
+              if (typeof window !== 'undefined' && window.kakao && window.kakao.maps) {
+                const ps = new window.kakao.maps.services.Places();
+                ps.keywordSearch(command.place, (data: any[], status: any) => {
+                  if (status === window.kakao.maps.services.Status.OK && data.length > 0) {
+                    const place = data[0];
+                    console.log('🔍 장소 검색 성공:', place.place_name);
+
+                    // 일정에 추가
+                    const newSchedule: ScheduleItem = {
+                      time: '09:00', // 기본 시간
+                      location: place.place_name,
+                      description: place.address_name || place.road_address_name || '',
+                      icon: '📍',
+                    };
+
+                    if (dayPlans.length > 0 && targetDay <= dayPlans.length) {
+                      handleSaveSchedule(newSchedule, targetDay);
+                      console.log(`✅ Day ${targetDay}에 "${newSchedule.location}" 자동 추가됨`);
+                    } else {
+                      console.warn('⚠️ dayPlans가 없거나 targetDay가 범위를 벗어남');
+                    }
+                  } else {
+                    console.warn(`⚠️ "${command.place}" 검색 결과 없음`);
+                  }
+                });
+              }
+            }
+          }
+        }}
+        onPlannerUpdate={(data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => {
+          console.log('🔄 Planner update received in planner.tsx:', data);
+
+          // 챗봇 메시지에서 장소 추천 파싱
+          if (data.message) {
+            const { places, details } = parseRecommendedPlaces(data.message);
+            if (places.length > 0) {
+              console.log('🤖 챗봇이 추천한 장소들:', places);
+              console.log('📝 추천 상세 정보:', details);
+              setRecommendedPlaces(places);
+              setRecommendationDetails(details);
+              setRecommendationPanelVisible(true);
+              setRecommendationPanelExpanded(true);
+            }
+          }
+
+          // 날짜 변경 감지 - 전체 데이터 다시 로드
+          if (data.update_type === 'dates_changed') {
+            console.log('📅 Date change detected! Reloading all trip data...');
+          }
+
+          // Reload data from backend (날짜, 일정 모두 포함)
+          loadDaysData();
+        }}
+        onMapSearch={(keyword: string, region?: string) => {
+          console.log('🗺️ Map search triggered from chatbot:', { keyword, region });
+          // Call KakaoMapSearch search method via ref
+          if (kakaoMapRef.current) {
+            kakaoMapRef.current.search(keyword);
+          } else {
+            console.warn('⚠️ KakaoMapSearch ref not available');
+          }
+        }}
         tripTitle={currentTrip?.title || `${selectedDestination} 여행`}
       />
 
@@ -1265,6 +2229,220 @@ export default function Planner() {
         tripId={tripId || 0}
         tripTitle={currentTrip?.title || `${selectedDestination} 여행`}
       />
+
+      {/* Place Search Sidebar */}
+      <PlaceSearchSidebar
+        open={searchSidebarOpen}
+        onClose={() => setSearchSidebarOpen(false)}
+        selectedDay={searchTargetDay}
+        onPlaceAdd={async (place, time) => {
+          console.log('Adding place:', place, 'at', time, 'to day', searchTargetDay);
+          if (!searchTargetDay) {
+            alert('날짜를 선택해주세요');
+            return;
+          }
+
+          // Add place to the selected day
+          const newItem: ScheduleItem = {
+            time: time || '09:00',
+            location: place.ko_name || place.name,
+            description: place.address || '',
+            icon: '📍',
+          };
+
+          setDayPlans(prev => prev.map(day =>
+            day.dayNumber === searchTargetDay
+              ? { ...day, schedules: [...day.schedules, newItem] }
+              : day
+          ));
+
+          // Close sidebar and show success message
+          setSearchSidebarOpen(false);
+          setSaveSuccess(true);
+        }}
+      />
+
+      {/* 추천 장소 하단 패널 */}
+      {recommendationPanelVisible && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: '40%',
+            right: 0,
+            bgcolor: 'white',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+            zIndex: 1300,
+            maxHeight: recommendationPanelExpanded ? '50vh' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'max-height 0.3s ease-in-out',
+          }}
+        >
+          {/* 패널 헤더 */}
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: '#364C84',
+              color: 'white',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => setRecommendationPanelExpanded(!recommendationPanelExpanded)}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                ⭐ AI 추천 장소
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                ({recommendationDetails.length}곳)
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton
+                size="small"
+                sx={{ color: 'white' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRecommendationPanelExpanded(!recommendationPanelExpanded);
+                }}
+              >
+                {recommendationPanelExpanded ? '▼' : '▲'}
+              </IconButton>
+              <IconButton
+                size="small"
+                sx={{ color: 'white' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRecommendationPanelVisible(false);
+                }}
+              >
+                ✕
+              </IconButton>
+            </Box>
+          </Box>
+
+          {/* 패널 내용 */}
+          {recommendationPanelExpanded && (
+            <Box
+              sx={{
+                flex: 1,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                p: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 2, minWidth: 'fit-content' }}>
+                {recommendationDetails.map((place, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      minWidth: '320px',
+                      maxWidth: '320px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px',
+                      p: 2,
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        borderColor: '#364C84',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'start', gap: 1, mb: 1 }}>
+                      <Typography
+                        sx={{
+                          bgcolor: '#FFD700',
+                          color: '#333',
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.875rem',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {place.index}
+                      </Typography>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          {place.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                          {place.description}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        onClick={() => {
+                          // 지도에서 검색
+                          if (kakaoMapRef.current) {
+                            kakaoMapRef.current.search(place.name);
+                          }
+                        }}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        🗺️ 지도에서 보기
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        fullWidth
+                        onClick={() => {
+                          if (!selectedDayNo) {
+                            alert('먼저 일차를 선택해주세요!');
+                            setActiveStep(3); // 일차별 계획 탭으로 이동
+                            return;
+                          }
+                          // 일정에 추가
+                          const daySchedules = tripData[selectedDayNo] || [];
+                          let defaultTime = '09:00';
+
+                          if (daySchedules.length > 0) {
+                            const lastTime = daySchedules[daySchedules.length - 1].time;
+                            const [hours, minutes] = lastTime.split(':').map(Number);
+                            const nextHour = (hours + 1) % 24;
+                            defaultTime = `${String(nextHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                          }
+
+                          const newSchedule: ScheduleItem = {
+                            time: defaultTime,
+                            location: place.name,
+                            description: place.description,
+                            icon: '⭐',
+                          };
+
+                          handleSaveSchedule(newSchedule, selectedDayNo);
+                          console.log(`✅ Day ${selectedDayNo}에 "${place.name}" 추가 완료`);
+                        }}
+                        sx={{
+                          bgcolor: '#364C84',
+                          '&:hover': {
+                            bgcolor: '#2a3a66',
+                          },
+                          textTransform: 'none',
+                        }}
+                      >
+                        ➕ Day {selectedDayNo || '?'}에 추가
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* Success/Error Snackbars */}
       <Snackbar

@@ -15,8 +15,11 @@ urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
 
-    # Health check
+    # Health check and common utilities
     path('', include('apps.common.urls')),
+
+    # API Common (regions, countries, etc.)
+    path('api/common/', include('apps.common.urls')),
 
     # API Authentication
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

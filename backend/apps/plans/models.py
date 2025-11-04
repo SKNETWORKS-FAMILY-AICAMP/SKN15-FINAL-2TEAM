@@ -86,6 +86,13 @@ class TripPlan(models.Model):
         blank=True,
         help_text='Expiration time for invite code'
     )
+    user_satisfaction = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        choices=[('like', 'Like'), ('dislike', 'Dislike')],
+        help_text='User satisfaction feedback'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

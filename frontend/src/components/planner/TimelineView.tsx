@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography, IconButton, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, IconButton, Button, TextField } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { ScheduleItem, TripData } from '../../types/planner';
 
@@ -8,6 +8,9 @@ interface TimelineViewProps {
   onEdit?: (dayNumber: number, itemIndex: number) => void;
   onDelete?: (dayNumber: number, itemIndex: number) => void;
   onAdd?: (dayNumber: number) => void;
+  selectedDayNo?: number | null;
+  onSelectDay?: (dayNumber: number) => void;
+  onUpdateTime?: (dayNumber: number, scheduleIndex: number, newTime: string) => void;
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({
@@ -15,7 +18,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   onEdit,
   onDelete,
   onAdd,
+  selectedDayNo,
+  onSelectDay,
+  onUpdateTime,
 }) => {
+  const [editingTime, setEditingTime] = useState<{dayNo: number, index: number} | null>(null);
+  const [tempTime, setTempTime] = useState<string>('');
   const totalDays = Object.keys(tripData).length;
 
   return (
@@ -73,8 +81,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
               <Box key={dayNumber}>
                 {/* Day Header */}
                 <Box
+                  onClick={() => onSelectDay && onSelectDay(dayNumber)}
                   sx={{
-                    background: 'linear-gradient(135deg, #364C84, #4a5f9f)',
+                    background: selectedDayNo === dayNumber
+                      ? 'linear-gradient(135deg, #1976d2, #2196f3)'
+                      : 'linear-gradient(135deg, #364C84, #4a5f9f)',
                     color: 'white',
                     padding: '15px 20px',
                     borderRadius: '10px',
@@ -86,12 +97,37 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                     position: 'sticky',
                     top: 0,
                     zIndex: 5,
+                    cursor: onSelectDay ? 'pointer' : 'default',
+                    border: selectedDayNo === dayNumber ? '3px solid #fff' : 'none',
+                    boxShadow: selectedDayNo === dayNumber
+                      ? '0 8px 25px rgba(25, 118, 210, 0.4)'
+                      : '0 2px 8px rgba(0,0,0,0.1)',
+                    transform: selectedDayNo === dayNumber ? 'scale(1.02)' : 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': onSelectDay ? {
+                      transform: 'scale(1.02)',
+                      boxShadow: '0 8px 20px rgba(54, 76, 132, 0.3)',
+                    } : {},
                   }}
                 >
-                  <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography component="span" sx={{ fontSize: '1.2rem', fontWeight: 600 }}>
                       📅 Day {dayNumber}
                     </Typography>
+                    {selectedDayNo === dayNumber && (
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontSize: '0.75rem',
+                          bgcolor: 'rgba(255,255,255,0.3)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        선택됨
+                      </Typography>
+                    )}
                   </Box>
                   <Typography
                     sx={{
@@ -165,9 +201,67 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                         }}
                       >
                         <span>🕐</span>
-                        <Typography component="span" sx={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#364C84' }}>
-                          {item.time}
-                        </Typography>
+                        {editingTime?.dayNo === dayNumber && editingTime?.index === itemIndex ? (
+                          <TextField
+                            type="time"
+                            value={tempTime}
+                            onChange={(e) => setTempTime(e.target.value)}
+                            onBlur={() => {
+                              if (onUpdateTime && tempTime) {
+                                onUpdateTime(dayNumber, itemIndex, tempTime);
+                              }
+                              setEditingTime(null);
+                              setTempTime('');
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                if (onUpdateTime && tempTime) {
+                                  onUpdateTime(dayNumber, itemIndex, tempTime);
+                                }
+                                setEditingTime(null);
+                                setTempTime('');
+                              }
+                              if (e.key === 'Escape') {
+                                setEditingTime(null);
+                                setTempTime('');
+                              }
+                            }}
+                            autoFocus
+                            size="small"
+                            sx={{
+                              width: '100px',
+                              '& input': {
+                                fontSize: '0.85rem',
+                                padding: '4px 8px',
+                                fontWeight: 'bold',
+                                color: '#364C84',
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            component="span"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTime({dayNo: dayNumber, index: itemIndex});
+                              setTempTime(item.time);
+                            }}
+                            sx={{
+                              fontSize: '0.85rem',
+                              fontWeight: 'bold',
+                              color: '#364C84',
+                              cursor: 'pointer',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              '&:hover': {
+                                bgcolor: '#f5f5f5',
+                                color: '#1976d2',
+                              }
+                            }}
+                          >
+                            {item.time}
+                          </Typography>
+                        )}
                       </Box>
 
                       {/* Content */}

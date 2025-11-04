@@ -13,6 +13,14 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedStart, select
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [isSelectingEndDate, setIsSelectingEndDate] = useState(false);
 
+  // Update calendar view when start date is selected
+  useEffect(() => {
+    if (selectedStart) {
+      setCurrentMonth(selectedStart.getMonth());
+      setCurrentYear(selectedStart.getFullYear());
+    }
+  }, [selectedStart]);
+
   const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -88,7 +96,9 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedStart, select
     // 현재 달 날짜들
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const isPast = date < todayWithoutTime;
+      // 이미 선택된 날짜 범위라면 과거 날짜도 허용
+      const hasSelectedDates = selectedStart !== null;
+      const isPast = !hasSelectedDates && date < todayWithoutTime;
       const isToday = date.toDateString() === today.toDateString();
       const isSelectedStart =
         selectedStart &&

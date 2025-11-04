@@ -113,15 +113,19 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ""
+        NEXT_PUBLIC_WS_URL: ""
+        NEXT_PUBLIC_KAKAO_API_KEY: ${NEXT_PUBLIC_KAKAO_API_KEY}
     container_name: triplan-frontend
+    command: sh -c "npm run dev"   # 개발 서버 실행 - Hot Reload!
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+      - NODE_ENV=${NODE_ENV:-development}
       - NEXT_PUBLIC_KAKAO_API_KEY=${NEXT_PUBLIC_KAKAO_API_KEY}
     volumes:
-      - /app/node_modules
-      - /app/.next
+      - ./frontend:/app          # 로컬 코드 마운트 - Hot Reload 가능!
+      - /app/node_modules        # node_modules는 컨테이너 것 사용
+      - /app/.next               # .next 빌드 캐시도 컨테이너 것 사용
     ports:
       - "3000:3000"
     depends_on:

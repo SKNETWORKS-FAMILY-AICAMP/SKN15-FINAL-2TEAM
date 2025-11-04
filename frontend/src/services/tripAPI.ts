@@ -8,6 +8,9 @@ export interface TripPlan {
   country_idx?: number;
   region1_idx?: number;
   region2_idx?: number;
+  country_name?: string;
+  region1_name?: string;
+  region2_name?: string;
   start_date: string;
   end_date: string;
   party_size?: number;
@@ -16,6 +19,7 @@ export interface TripPlan {
   status: 'draft' | 'confirmed' | 'archived';
   invite_code?: string;
   invite_code_expires_at?: string;
+  user_satisfaction?: 'like' | 'dislike' | null;
   created_at: string;
   updated_at: string;
 }
@@ -154,7 +158,8 @@ const tripAPI = {
   // Get trip items
   getItems: async (dayId: number): Promise<TripItem[]> => {
     const response = await api.get(`/api/plans/items/?day_idx=${dayId}`);
-    return response.data;
+    // Backend returns paginated response with results array
+    return response.data.results || response.data;
   },
 
   // Create trip item
@@ -197,6 +202,18 @@ const tripAPI = {
   }> => {
     const response = await api.post('/api/plans/trips/join_by_code/', {
       invite_code: inviteCode.toUpperCase(),
+    });
+    return response.data;
+  },
+
+  // Submit user satisfaction
+  submitSatisfaction: async (tripId: number, satisfaction: 'like' | 'dislike'): Promise<{
+    success: boolean;
+    message: string;
+    satisfaction: string;
+  }> => {
+    const response = await api.post(`/api/plans/trips/${tripId}/submit_satisfaction/`, {
+      satisfaction,
     });
     return response.data;
   },

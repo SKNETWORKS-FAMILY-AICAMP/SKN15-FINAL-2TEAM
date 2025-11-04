@@ -15,9 +15,12 @@ interface Position {
 interface UnifiedChatWidgetProps {
   tripId: number | null;
   tripTitle?: string;
+  onMessage?: (message: any) => void;
+  onPlannerUpdate?: (data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => void;
+  onMapSearch?: (keyword: string, region?: string) => void;
 }
 
-const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle = '여행 계획' }) => {
+const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle = '여행 계획', onMessage, onPlannerUpdate, onMapSearch }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const [roomId, setRoomId] = useState<number | null>(null);
@@ -33,6 +36,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [isBotTyping, setIsBotTyping] = useState(false);
 
   // 크기 조절
   const [chatSize, setChatSize] = useState({ width: 380, height: 550 });
@@ -94,11 +98,39 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
     roomId: roomId || 0,
     onMessage: (message) => {
       console.log('New message:', message);
+
+      // 봇 메시지가 오면 타이핑 상태 해제
+      if (message.is_bot) {
+        setIsBotTyping(false);
+      }
+
+      // 상위 컴포넌트로 메시지 전달
+      if (onMessage) {
+        onMessage(message);
+      }
+    },
+    onPlannerUpdate: (data) => {
+      console.log('🔄 Planner update received in UnifiedChatWidget:', data);
+      if (onPlannerUpdate) {
+        onPlannerUpdate(data);
+      }
+    },
+    onMapSearch: (keyword, region) => {
+      console.log('🗺️ Map search received in UnifiedChatWidget:', { keyword, region });
+      if (onMapSearch) {
+        onMapSearch(keyword, region);
+      }
     },
   });
 
   // Check if this is a group chat (more than 1 member)
   const isGroupChat = members.length > 1;
+
+  // Debug: Log when members change
+  useEffect(() => {
+    console.log('🎯 [UnifiedChatWidget] members changed:', members.length, members);
+    console.log('🎯 [UnifiedChatWidget] isGroupChat:', isGroupChat);
+  }, [members, isGroupChat]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -234,9 +266,15 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
     const message = inputValue.trim();
     if (!message || !roomId) return;
 
-    // Check if message mentions bot
+    // Check if message mentions bot or is in 1-on-1 chat (auto-bot response)
     const mentionsBot = message.includes('@봇') || message.includes('@bot');
+    const willTriggerBot = mentionsBot || !isGroupChat;
     const msgType = mentionsBot ? 'bot' : 'text';
+
+    // 봇이 응답할 것이면 타이핑 상태 시작
+    if (willTriggerBot) {
+      setIsBotTyping(true);
+    }
 
     wsSendMessage(message, msgType);
     setInputValue('');
@@ -639,6 +677,19 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
           )}
 
           {messages.map((message, index) => {
+            // 추천 장소 메시지는 UI 패널로만 표시하고 채팅창에서는 숨김
+            if (message.is_bot && message.content) {
+              // 마크다운 리스트 패턴 확인
+              const hasRecommendationPattern = /\d+\.\s*\*\*[^*]+\*\*/.test(message.content);
+              // JSON 배열 패턴 확인
+              const hasJsonPattern = /\[\s*\{[\s\S]*"name"[\s\S]*\}\s*\]/.test(message.content);
+
+              if (hasRecommendationPattern || hasJsonPattern) {
+                console.log('🚫 추천 메시지 필터링: 채팅창에 표시하지 않음');
+                return null;
+              }
+            }
+
             // Determine if this is my message
             const isMyMessage = !message.is_bot && message.user && user && message.user.user_idx === user.user_idx;
             const messageClass = message.is_bot ? 'bot-message' : (isMyMessage ? 'my-message' : 'user-message');
@@ -666,6 +717,18 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
               <span className="typing-dots">
                 <span>.</span><span>.</span><span>.</span>
               </span>
+            </div>
+          )}
+
+          {/* Bot typing indicator */}
+          {isBotTyping && (
+            <div className="message bot-message">
+              <div className="message-content bot-typing">
+                <span className="bot-badge">🤖 AI</span>
+                <span className="typing-dots">
+                  <span>.</span><span>.</span><span>.</span>
+                </span>
+              </div>
             </div>
           )}
         </div>

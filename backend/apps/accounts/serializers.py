@@ -7,11 +7,11 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
-    
+
     class Meta:
         model = User
-        fields = ['user_idx', 'email', 'status', 'tz', 'created_at']
-        read_only_fields = ['user_idx', 'created_at']
+        fields = ['user_idx', 'email', 'status', 'tz', 'is_staff', 'is_superuser', 'created_at']
+        read_only_fields = ['user_idx', 'is_staff', 'is_superuser', 'created_at']
 
 
 class RegisterSerializer(serializers.ModelSerializer):

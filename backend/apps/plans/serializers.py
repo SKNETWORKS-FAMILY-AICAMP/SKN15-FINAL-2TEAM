@@ -42,15 +42,19 @@ class TripPlanSerializer(serializers.ModelSerializer):
     members = TripMemberSerializer(many=True, read_only=True)
     owner_email = serializers.EmailField(source='owner_user_idx.email', read_only=True)
     member_count = serializers.SerializerMethodField()
+    country_name = serializers.CharField(source='country_idx.country_name', read_only=True)
+    region1_name = serializers.CharField(source='region1_idx.region1_name', read_only=True)
+    region2_name = serializers.CharField(source='region2_idx.region2_name', read_only=True)
 
     class Meta:
         model = TripPlan
         fields = [
             'trip_idx', 'owner_user_idx', 'owner_email', 'title',
             'country_idx', 'region1_idx', 'region2_idx',
+            'country_name', 'region1_name', 'region2_name',
             'start_date', 'end_date', 'party_size',
             'budget_currency', 'budget_amount', 'status',
-            'invite_code', 'invite_code_expires_at',
+            'invite_code', 'invite_code_expires_at', 'user_satisfaction',
             'created_at', 'updated_at', 'days', 'members', 'member_count'
         ]
         read_only_fields = ['trip_idx', 'created_at', 'updated_at', 'owner_user_idx', 'invite_code', 'invite_code_expires_at']
@@ -90,7 +94,7 @@ class TripPlanListSerializer(serializers.ModelSerializer):
         fields = [
             'trip_idx', 'owner_user_idx', 'owner_email', 'title',
             'start_date', 'end_date', 'status',
-            'invite_code', 'invite_code_expires_at',
+            'invite_code', 'invite_code_expires_at', 'user_satisfaction',
             'member_count', 'my_role', 'created_at'
         ]
 

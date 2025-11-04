@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../hooks/useAuth';
 
@@ -30,39 +29,35 @@ export default function Header() {
       <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid #eee', mb: 5 }}>
         <Container maxWidth="lg">
           <Toolbar sx={{ justifyContent: 'space-between', py: 2 }}>
-            <Link href="/" passHref>
-              <Typography
-                variant="h6"
-                component="a"
+            <Typography
+              onClick={() => router.push('/')}
+              variant="h6"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 'bold',
+                fontSize: '1.8rem',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Triplan
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Button
+                onClick={() => router.push('/places')}
+                variant="text"
                 sx={{
-                  color: 'primary.main',
-                  fontWeight: 'bold',
-                  fontSize: '1.8rem',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  color: '#333',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                  }
                 }}
               >
-                Triplan
-              </Typography>
-            </Link>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Link href="/places" passHref legacyBehavior>
-                <Button
-                  variant="text"
-                  component="a"
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    color: '#333',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 0, 0, 0.04)',
-                    }
-                  }}
-                >
-                  여행지
-                </Button>
-              </Link>
+                여행지
+              </Button>
               <Button variant="outlined" color="primary" disabled>
                 로딩중...
               </Button>
@@ -77,40 +72,36 @@ export default function Header() {
     <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid #eee', mb: 5 }}>
       <Container maxWidth="lg">
         <Toolbar sx={{ justifyContent: 'space-between', py: 2 }}>
-          <Link href="/" passHref>
-            <Typography
-              variant="h6"
-              component="a"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 'bold',
-                fontSize: '1.8rem',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Triplan
-            </Typography>
-          </Link>
+          <Typography
+            onClick={() => router.push('/')}
+            variant="h6"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 'bold',
+              fontSize: '1.8rem',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Triplan
+          </Typography>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Link href="/places" passHref legacyBehavior>
-              <Button
-                variant="text"
-                component="a"
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  color: '#333',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                여행지
-              </Button>
-            </Link>
+            <Button
+              onClick={() => router.push('/places')}
+              variant="text"
+              sx={{
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+                color: '#333',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.04)',
+                }
+              }}
+            >
+              여행지
+            </Button>
             {isAuthenticated ? (
               <>
                 <Button
@@ -143,16 +134,20 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link href="/login" passHref legacyBehavior>
-                  <Button variant="outlined" color="primary" component="a">
-                    로그인
-                  </Button>
-                </Link>
-                <Link href="/signup" passHref legacyBehavior>
-                  <Button variant="contained" color="primary" component="a">
-                    회원가입
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => router.push('/login')}
+                  variant="outlined"
+                  color="primary"
+                >
+                  로그인
+                </Button>
+                <Button
+                  onClick={() => router.push('/signup')}
+                  variant="contained"
+                  color="primary"
+                >
+                  회원가입
+                </Button>
               </>
             )}
           </Box>

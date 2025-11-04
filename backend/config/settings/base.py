@@ -177,6 +177,8 @@ KAKAO_API_KEY = env('KAKAO_API_KEY', default='')
 
 # Kakao Map API
 KAKAO_MAP_API_KEY = env('KAKAO_MAP_API_KEY', default='')
+# Kakao REST API Key (for Places search in agent)
+KAKAO_REST_API_KEY = env('KAKAO_REST_API_KEY', default=env('KAKAO_API_KEY', default=''))
 
 # JWT Settings
 from datetime import timedelta

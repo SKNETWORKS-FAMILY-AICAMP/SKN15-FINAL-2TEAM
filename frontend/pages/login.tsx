@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Checkbox, FormControlLabel, Link as MuiLink, Alert } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { authAPI } from '../src/services/api';
-import tripAPI from '../src/services/tripAPI';
 
 export default function Login() {
   const router = useRouter();
@@ -28,7 +26,15 @@ export default function Login() {
 
       alert('로그인 성공! 환영합니다.');
 
-      // Check if there's a redirect URL
+      // Check if there's a return URL (for invite links)
+      const returnUrl = router.query.returnUrl as string;
+      if (returnUrl) {
+        // Use window.location for hard navigation to ensure auth state is refreshed
+        window.location.href = decodeURIComponent(returnUrl);
+        return;
+      }
+
+      // Also check for legacy 'redirect' parameter
       const redirect = router.query.redirect as string;
       if (redirect) {
         // Use window.location for hard navigation to ensure auth state is refreshed
@@ -36,25 +42,20 @@ export default function Login() {
         return;
       }
 
-      // Fetch user's trips and redirect to the first one
+      // Check if user is admin (staff or superuser) - redirect to dashboard
+      // We need to verify this via API call
       try {
-        const trips = await tripAPI.getTrips();
-        if (trips && trips.length > 0) {
-          // Redirect to the first trip using invite_code
-          if (trips[0].invite_code) {
-            router.push(`/planner/${trips[0].invite_code}`);
-          } else {
-            router.push('/mypage');
-          }
-        } else {
-          // No trips found, redirect to main page
-          router.push('/');
+        const meResponse = await authAPI.me();
+        if (meResponse.is_staff || meResponse.is_superuser) {
+          router.push('/dashboard');
+          return;
         }
-      } catch (tripErr) {
-        console.error('Failed to fetch trips:', tripErr);
-        // Fallback to main page if trip fetching fails
-        router.push('/');
+      } catch (err) {
+        console.error('Failed to check admin status:', err);
       }
+
+      // Regular users redirect to mypage
+      router.push('/mypage');
     } catch (err: any) {
       setError(err.response?.data?.error || '로그인에 실패했습니다.');
     } finally {
@@ -67,38 +68,34 @@ export default function Login() {
       {/* Header */}
       <Box sx={{ bgcolor: '#364C84', py: 2, px: 4, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
         <Box sx={{ maxWidth: 1200, mx: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" passHref>
-            <Typography
-              component="a"
+          <Typography
+            onClick={() => router.push('/')}
+            sx={{
+              color: 'white',
+              fontSize: '2rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            🌍 Triplan
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={() => router.push('/signup')}
+              variant="outlined"
               sx={{
                 color: 'white',
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                textDecoration: 'none',
-                cursor: 'pointer',
+                borderColor: 'rgba(255,255,255,0.3)',
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'rgba(255,255,255,0.6)',
+                },
               }}
             >
-              🌍 Triplan
-            </Typography>
-          </Link>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Link href="/signup" passHref>
-              <Button
-                component="a"
-                variant="outlined"
-                sx={{
-                  color: 'white',
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  fontWeight: 600,
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    borderColor: 'rgba(255,255,255,0.6)',
-                  },
-                }}
-              >
-                회원가입
-              </Button>
-            </Link>
+              회원가입
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -273,11 +270,18 @@ export default function Login() {
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   아직 계정이 없으신가요?{' '}
-                  <Link href="/signup" passHref>
-                    <MuiLink sx={{ color: '#364c84', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                      회원가입
-                    </MuiLink>
-                  </Link>
+                  <MuiLink
+                    onClick={() => router.push('/signup')}
+                    sx={{
+                      color: '#364c84',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
+                  >
+                    회원가입
+                  </MuiLink>
                 </Typography>
               </Box>
             </Box>

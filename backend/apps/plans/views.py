@@ -1,11 +1,14 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Count, Avg, F
+from django.db.models.functions import TruncDate
+from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from datetime import timedelta
 
 from .models import TripPlan, TripDay, TripItem, TripMember
 from .serializers import (
@@ -40,12 +43,51 @@ class TripPlanViewSet(viewsets.ModelViewSet):
             return TripPlanListSerializer
         return TripPlanSerializer
 
+    def perform_update(self, serializer):
+        """Update trip and broadcast to all members"""
+        instance = serializer.save()
+
+        # Broadcast planner update to all connected users via WebSocket
+        self._broadcast_planner_update(
+            trip=instance,
+            update_type='trip',
+            message=f'{self.request.user.email}님이 여행 정보를 수정했습니다.'
+        )
+
+        return instance
+
     def perform_destroy(self, instance):
         """Only owner can delete trip"""
         member = instance.members.filter(user_idx=self.request.user).first()
         if not member or member.role != 'owner':
             raise PermissionError('Only owner can delete trip')
         instance.delete()
+
+    def _broadcast_planner_update(self, trip, update_type='trip', message=None):
+        """Helper method to broadcast planner updates via WebSocket"""
+        try:
+            # Get the chat room for this trip
+            chat_room = ChatRoom.objects.filter(trip_idx=trip).first()
+            if not chat_room:
+                return
+
+            channel_layer = get_channel_layer()
+            room_group_name = f'trip_chat_{chat_room.room_idx}'
+
+            # Broadcast to all connected users
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'planner_updated',
+                    'updated_by': self.request.user.email,
+                    'update_type': update_type,
+                    'trip_idx': trip.trip_idx,
+                    'message': message or '플래너가 업데이트되었습니다.'
+                }
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"Failed to broadcast planner update: {e}")
 
     @action(detail=True, methods=['post'])
     def invite(self, request, pk=None):
@@ -229,12 +271,28 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 'member': TripMemberSerializer(existing_member).data
             })
 
-        # Add user as viewer by default
-        new_member = TripMember.objects.create(
-            trip_idx=trip,
-            user_idx=request.user,
-            role='viewer'
-        )
+        # Add user as viewer by default (use get_or_create to handle race conditions)
+        try:
+            new_member, created = TripMember.objects.get_or_create(
+                trip_idx=trip,
+                user_idx=request.user,
+                defaults={'role': 'viewer'}
+            )
+
+            if not created:
+                # Already exists (race condition)
+                return Response({
+                    'success': True,
+                    'message': 'You are already a member of this trip',
+                    'trip_id': trip.trip_idx,
+                    'trip_title': trip.title,
+                    'member': TripMemberSerializer(new_member).data
+                })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to join trip: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         # Send system message and WebSocket notification
         try:
@@ -315,17 +373,16 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Check if code is still valid
-        if not trip.is_invite_code_valid():
-            return Response(
-                {'error': 'Invite code has expired'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check if user has access to this trip
+        # Check if user is a member first
         is_member = trip.members.filter(user_idx=request.user).exists()
 
+        # If not a member, check if invite code is still valid
         if not is_member:
+            if not trip.is_invite_code_valid():
+                return Response(
+                    {'error': 'Invite code has expired'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(
                 {'error': 'You are not a member of this trip. Please join using the invite code first.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -490,6 +547,29 @@ class TripPlanViewSet(viewsets.ModelViewSet):
             'member': TripMemberSerializer(target_member).data
         })
 
+    @action(detail=True, methods=['post'])
+    def submit_satisfaction(self, request, pk=None):
+        """Submit user satisfaction feedback"""
+        trip = self.get_object()
+        satisfaction = request.data.get('satisfaction')
+
+        # Validate satisfaction value
+        if satisfaction not in ['like', 'dislike']:
+            return Response(
+                {'error': 'Invalid satisfaction value. Must be "like" or "dislike"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Update trip satisfaction
+        trip.user_satisfaction = satisfaction
+        trip.save(update_fields=['user_satisfaction', 'updated_at'])
+
+        return Response({
+            'success': True,
+            'message': 'Satisfaction feedback submitted successfully',
+            'satisfaction': satisfaction
+        })
+
 
 class TripDayViewSet(viewsets.ModelViewSet):
     """Trip Day ViewSet"""
@@ -497,9 +577,55 @@ class TripDayViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return TripDay.objects.filter(
+        queryset = TripDay.objects.filter(
             trip_idx__members__user_idx=self.request.user
         ).distinct()
+
+        # Filter by trip_idx if provided in query params
+        trip_idx = self.request.query_params.get('trip_idx', None)
+        if trip_idx is not None:
+            queryset = queryset.filter(trip_idx=trip_idx)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """Create day and broadcast update"""
+        instance = serializer.save()
+        self._broadcast_planner_update(instance.trip_idx, 'day', f'{self.request.user.email}님이 Day를 추가했습니다.')
+
+    def perform_update(self, serializer):
+        """Update day and broadcast update"""
+        instance = serializer.save()
+        self._broadcast_planner_update(instance.trip_idx, 'day', f'{self.request.user.email}님이 Day를 수정했습니다.')
+
+    def perform_destroy(self, instance):
+        """Delete day and broadcast update"""
+        trip = instance.trip_idx
+        instance.delete()
+        self._broadcast_planner_update(trip, 'day', f'{self.request.user.email}님이 Day를 삭제했습니다.')
+
+    def _broadcast_planner_update(self, trip, update_type, message):
+        """Broadcast planner update"""
+        try:
+            chat_room = ChatRoom.objects.filter(trip_idx=trip).first()
+            if not chat_room:
+                return
+
+            channel_layer = get_channel_layer()
+            room_group_name = f'trip_chat_{chat_room.room_idx}'
+
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'planner_updated',
+                    'updated_by': self.request.user.email,
+                    'update_type': update_type,
+                    'trip_idx': trip.trip_idx,
+                    'message': message
+                }
+            )
+        except Exception as e:
+            print(f"Failed to broadcast planner update: {e}")
 
 
 class TripItemViewSet(viewsets.ModelViewSet):
@@ -508,6 +634,185 @@ class TripItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return TripItem.objects.filter(
+        queryset = TripItem.objects.filter(
             day_idx__trip_idx__members__user_idx=self.request.user
         ).distinct()
+
+        # Filter by day_idx if provided in query params
+        day_idx = self.request.query_params.get('day_idx', None)
+        if day_idx is not None:
+            queryset = queryset.filter(day_idx=day_idx)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """Create item and broadcast update"""
+        instance = serializer.save()
+        self._broadcast_planner_update(instance.day_idx.trip_idx, 'item', f'{self.request.user.email}님이 일정을 추가했습니다.')
+
+    def perform_update(self, serializer):
+        """Update item and broadcast update"""
+        instance = serializer.save()
+        self._broadcast_planner_update(instance.day_idx.trip_idx, 'item', f'{self.request.user.email}님이 일정을 수정했습니다.')
+
+    def perform_destroy(self, instance):
+        """Delete item and broadcast update"""
+        trip = instance.day_idx.trip_idx
+        instance.delete()
+        self._broadcast_planner_update(trip, 'item', f'{self.request.user.email}님이 일정을 삭제했습니다.')
+
+    def _broadcast_planner_update(self, trip, update_type, message):
+        """Broadcast planner update"""
+        try:
+            chat_room = ChatRoom.objects.filter(trip_idx=trip).first()
+            if not chat_room:
+                return
+
+            channel_layer = get_channel_layer()
+            room_group_name = f'trip_chat_{chat_room.room_idx}'
+
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'planner_updated',
+                    'updated_by': self.request.user.email,
+                    'update_type': update_type,
+                    'trip_idx': trip.trip_idx,
+                    'message': message
+                }
+            )
+        except Exception as e:
+            print(f"Failed to broadcast planner update: {e}")
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_statistics(request):
+    """
+    관리자 대시보드용 통계 API (관리자 권한 필요)
+    - 전체 여행 통계
+    - 만족도 분석
+    - 시간대별 생성 추이
+    - 인기 목적지
+    """
+    try:
+        # 기본 통계
+        total_trips = TripPlan.objects.count()
+        total_users = User.objects.filter(status='active').count()
+
+        # 만족도 통계
+        satisfaction_stats = TripPlan.objects.aggregate(
+            total_like=Count('trip_idx', filter=Q(user_satisfaction='like')),
+            total_dislike=Count('trip_idx', filter=Q(user_satisfaction='dislike')),
+            total_none=Count('trip_idx', filter=Q(user_satisfaction__isnull=True))
+        )
+
+        # 최근 30일간 일별 생성 통계
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        daily_stats = (
+            TripPlan.objects
+            .filter(created_at__gte=thirty_days_ago)
+            .annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(count=Count('trip_idx'))
+            .order_by('date')
+        )
+
+        # 최근 30일간 일별 만족도 통계
+        satisfaction_trend = (
+            TripPlan.objects
+            .filter(created_at__gte=thirty_days_ago, user_satisfaction__isnull=False)
+            .annotate(date=TruncDate('created_at'))
+            .values('date', 'user_satisfaction')
+            .annotate(count=Count('trip_idx'))
+            .order_by('date')
+        )
+
+        # 만족도 트렌드 데이터 재구성
+        satisfaction_by_date = {}
+        for item in satisfaction_trend:
+            date_str = item['date'].isoformat()
+            if date_str not in satisfaction_by_date:
+                satisfaction_by_date[date_str] = {'date': date_str, 'like': 0, 'dislike': 0}
+
+            if item['user_satisfaction'] == 'like':
+                satisfaction_by_date[date_str]['like'] = item['count']
+            elif item['user_satisfaction'] == 'dislike':
+                satisfaction_by_date[date_str]['dislike'] = item['count']
+
+        # 여행 통계
+        trip_stats = TripPlan.objects.aggregate(
+            avg_duration=Avg(F('end_date') - F('start_date')),
+            avg_party_size=Avg('party_size'),
+            avg_budget=Avg('budget_amount')
+        )
+
+        # 평균 여행 기간 (일수로 변환)
+        avg_duration_days = None
+        if trip_stats['avg_duration']:
+            avg_duration_days = trip_stats['avg_duration'].days
+
+        # 최근 여행 목록
+        recent_trips = TripPlan.objects.select_related('owner_user_idx').order_by('-created_at')[:20]
+        recent_trips_data = []
+        for trip in recent_trips:
+            recent_trips_data.append({
+                'trip_idx': trip.trip_idx,
+                'title': trip.title,
+                'start_date': trip.start_date,
+                'end_date': trip.end_date,
+                'party_size': trip.party_size,
+                'budget': trip.budget_amount,
+                'user_satisfaction': trip.user_satisfaction,
+                'status': trip.status,
+                'created_at': trip.created_at,
+                'owner_email': trip.owner_user_idx.email if trip.owner_user_idx else None,
+            })
+
+        # 인기 여행 스타일 (예산 구간별)
+        budget_distribution = TripPlan.objects.filter(budget_amount__isnull=False).extra(
+            select={
+                'budget_range': """
+                    CASE
+                        WHEN budget_amount < 500000 THEN '50만원 미만'
+                        WHEN budget_amount < 1000000 THEN '50만원-100만원'
+                        WHEN budget_amount < 2000000 THEN '100만원-200만원'
+                        WHEN budget_amount < 3000000 THEN '200만원-300만원'
+                        ELSE '300만원 이상'
+                    END
+                """
+            }
+        ).values('budget_range').annotate(count=Count('trip_idx')).order_by('-count')
+
+        # 여행 인원 분포
+        party_distribution = TripPlan.objects.filter(party_size__isnull=False).values('party_size').annotate(
+            count=Count('trip_idx')
+        ).order_by('party_size')
+
+        return Response({
+            'success': True,
+            'total_trips': total_trips,
+            'total_users': total_users,
+            'satisfaction': {
+                'like': satisfaction_stats['total_like'],
+                'dislike': satisfaction_stats['total_dislike'],
+                'none': satisfaction_stats['total_none'],
+                'rate': (satisfaction_stats['total_like'] / total_trips * 100) if total_trips > 0 else 0
+            },
+            'daily_creation': list(daily_stats),
+            'satisfaction_trend': list(satisfaction_by_date.values()),
+            'trip_stats': {
+                'avg_duration_days': avg_duration_days,
+                'avg_party_size': float(trip_stats['avg_party_size']) if trip_stats['avg_party_size'] else 0,
+                'avg_budget': float(trip_stats['avg_budget']) if trip_stats['avg_budget'] else 0,
+            },
+            'budget_distribution': list(budget_distribution),
+            'party_distribution': list(party_distribution),
+            'recent_trips': recent_trips_data,
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

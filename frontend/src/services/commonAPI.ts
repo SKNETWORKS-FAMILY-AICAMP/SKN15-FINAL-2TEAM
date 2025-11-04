@@ -15,6 +15,13 @@ export interface Region1 {
   city_name: string;
 }
 
+export interface Region2 {
+  region2_idx: number;
+  region1_idx: number;
+  region2_code: number;
+  region2_name: string;
+}
+
 const commonAPI = {
   // Get all countries
   getCountries: async (): Promise<Country[]> => {
@@ -31,6 +38,18 @@ const commonAPI = {
   // Get cities by country
   getCitiesByCountry: async (countryCode: number): Promise<Region1[]> => {
     const response = await api.get(`/api/common/regions1/?country_code=${countryCode}`);
+    return response.data.results || response.data;
+  },
+
+  // Get all regions2 (districts)
+  getRegions2: async (): Promise<Region2[]> => {
+    const response = await api.get('/api/common/regions2/');
+    return response.data.results || response.data;
+  },
+
+  // Get regions2 by region1
+  getRegions2ByRegion1: async (region1Idx: number): Promise<Region2[]> => {
+    const response = await api.get(`/api/common/regions2/?region1_idx=${region1Idx}`);
     return response.data.results || response.data;
   },
 };

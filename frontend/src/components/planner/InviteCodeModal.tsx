@@ -36,6 +36,11 @@ const InviteCodeModal: React.FC<InviteCodeModalProps> = ({
   const [error, setError] = useState<string>('');
 
   const handleGenerateCode = async () => {
+    if (!tripId || tripId === 0) {
+      setError('여행 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');

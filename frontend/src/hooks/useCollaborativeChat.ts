@@ -27,6 +27,8 @@ interface UseCollaborativeChatOptions {
   onMessage?: (message: ChatMessage) => void;
   onMemberUpdate?: (members: ChatMember[]) => void;
   onTypingUpdate?: (userId: number, isTyping: boolean) => void;
+  onPlannerUpdate?: (data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => void;
+  onMapSearch?: (keyword: string, region?: string) => void;
 }
 
 export function useCollaborativeChat({
@@ -34,13 +36,16 @@ export function useCollaborativeChat({
   onMessage,
   onMemberUpdate,
   onTypingUpdate,
+  onPlannerUpdate,
+  onMapSearch,
 }: UseCollaborativeChatOptions) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<ChatMember[]>([]);
+  const pendingMessagesRef = useRef<Set<string>>(new Set());
 
   // Connect to WebSocket
   const connect = useCallback(() => {
@@ -81,6 +86,15 @@ export function useCollaborativeChat({
         case 'chat_message':
         case 'bot_message':
           const msgData = data.message || data;
+          const messageId = msgData.content; // Use content as temporary ID for deduplication
+
+          // Skip if this is a pending message we already added optimistically
+          if (pendingMessagesRef.current.has(messageId)) {
+            pendingMessagesRef.current.delete(messageId);
+            // Don't add to messages again, it's already there
+            break;
+          }
+
           const newMessage: ChatMessage = {
             message_idx: msgData.message_idx,
             user: msgData.user_idx ? { user_idx: msgData.user_idx, email: msgData.user_email } : undefined,
@@ -95,29 +109,75 @@ export function useCollaborativeChat({
           break;
 
         case 'member_list':
+          console.log('📋 Member list received:', data.members.length, 'members');
           setMembers(data.members);
           if (onMemberUpdate) onMemberUpdate(data.members);
           break;
 
         case 'member_joined':
         case 'member_left':
-          // Update member list
+          console.log('📢 Member event:', data.type, data);
+          console.log('📢 Event data:', JSON.stringify(data, null, 2));
+          // Update member list with FORCED re-render
           setMembers(prev => {
+            console.log('📊 Current members before update:', prev.length, prev);
+            console.log('📊 Previous array:', prev);
+
             if (data.type === 'member_joined') {
-              return [...prev, data.member];
+              // Check if member already exists to prevent duplicates
+              const exists = prev.some((m: ChatMember) => m.user_idx === data.member.user_idx);
+              if (exists) {
+                console.log('⚠️ Member already exists, skipping add');
+                // IMPORTANT: Return prev (same reference) to avoid unnecessary re-render
+                return prev;
+              }
+              console.log('✅ Adding new member:', data.member.email);
+              // FORCE new array creation to trigger re-render
+              const newMembers = [...prev, data.member];
+              console.log('📊 Members after add:', newMembers.length, newMembers);
+              console.log('📊 Array reference changed:', prev !== newMembers);
+              return newMembers;
             } else {
-              return prev.filter(m => m.user_idx !== data.user_idx);
+              console.log('👋 Removing member:', data.user_idx);
+              // FORCE new array creation to trigger re-render
+              const newMembers = prev.filter((m: ChatMember) => m.user_idx !== data.user_idx);
+              console.log('📊 Members after remove:', newMembers.length);
+              console.log('📊 Array reference changed:', prev !== newMembers);
+              return newMembers;
             }
           });
+          // Force update callback
+          if (onMemberUpdate) {
+            onMemberUpdate(data.members || []);
+          }
           break;
 
         case 'typing':
           if (onTypingUpdate) onTypingUpdate(data.user_idx, data.is_typing);
-          setMembers(prev => prev.map(m =>
+          setMembers(prev => prev.map((m: ChatMember) =>
             m.user_idx === data.user_idx
               ? { ...m, is_typing: data.is_typing }
               : m
           ));
+          break;
+
+        case 'planner_updated':
+          console.log('📢 Planner updated:', data);
+          if (onPlannerUpdate) {
+            onPlannerUpdate({
+              updated_by: data.updated_by,
+              update_type: data.update_type,
+              trip_idx: data.trip_idx,
+              message: data.message
+            });
+          }
+          break;
+
+        case 'map_search':
+          console.log('🗺️ Map search requested:', data);
+          if (onMapSearch) {
+            onMapSearch(data.keyword, data.region);
+          }
           break;
 
         case 'error':
@@ -159,12 +219,34 @@ export function useCollaborativeChat({
       return;
     }
 
+    // Optimistic UI update - add message immediately
+    const optimisticMessage: ChatMessage = {
+      message_idx: Date.now(), // Temporary ID
+      user: user ? { user_idx: user.user_idx, email: user.email } : undefined,
+      is_bot: false,
+      msg_type: msgType,
+      content: content,
+      created_at: new Date().toISOString(),
+    };
+
+    // Add to pending messages set to prevent duplicate when server echoes back
+    pendingMessagesRef.current.add(content);
+
+    // Add message to UI immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // Send to server
     wsRef.current.send(JSON.stringify({
       type: 'chat_message',
       msg_type: msgType,
       content: content,
     }));
-  }, []);
+
+    // Clean up pending message after timeout (in case server never responds)
+    setTimeout(() => {
+      pendingMessagesRef.current.delete(content);
+    }, 5000);
+  }, [user]);
 
   // Send typing indicator
   const sendTyping = useCallback((isTyping: boolean) => {
@@ -231,6 +313,13 @@ export function useCollaborativeChat({
       loadHistory();
     }
   }, [isConnected]); // Only depend on isConnected to avoid infinite loop
+
+  // Debug: Track members state changes
+  useEffect(() => {
+    console.log('🔍 [useCollaborativeChat] members state changed!');
+    console.log('🔍 [useCollaborativeChat] New members count:', members.length);
+    console.log('🔍 [useCollaborativeChat] Members:', members);
+  }, [members]);
 
   return {
     isConnected,
