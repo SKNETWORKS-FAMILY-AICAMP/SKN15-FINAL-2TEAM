@@ -26,6 +26,12 @@ class TripAlert(models.Model):
         db_table = 'trip_alerts'
         verbose_name = 'Trip Alert'
         verbose_name_plural = 'Trip Alerts'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['country_code'],
+                name='trip_alerts_country_code_unique'
+            ),
+        ]
 
     def __str__(self):
         country_name = self.country_code.country_name if self.country_code else 'Unknown'

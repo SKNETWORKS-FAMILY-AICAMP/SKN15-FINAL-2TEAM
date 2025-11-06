@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCollaborativeChat, ChatMessage as WsChatMessage, ChatMember } from '../../hooks/useCollaborativeChat';
 import { useAuth } from '../../hooks/useAuth';
+import { useVoiceRecognitionLocal } from '../../hooks/useVoiceRecognitionLocal';
 import chatAPI from '../../services/chatAPI';
 import tripAPI from '../../services/tripAPI';
 import InviteCodeModal from './InviteCodeModal';
@@ -125,6 +126,26 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
 
   // Check if this is a group chat (more than 1 member)
   const isGroupChat = members.length > 1;
+
+  // Voice recognition hook (로컬 STT 모델 사용)
+  const {
+    isSupported: isVoiceSupported,
+    isListening,
+    isRecording,
+    isTranscribing,
+    recordingTime,
+    startListening,
+    stopListening,
+    reset: resetVoice,
+  } = useVoiceRecognitionLocal({
+    onResult: (text) => {
+      // 음성인식 결과를 입력창에 추가
+      setInputValue(prev => prev + text + ' ');
+    },
+    onError: (error) => {
+      alert(error);
+    },
+  });
 
   // Debug: Log when members change
   useEffect(() => {
@@ -738,12 +759,43 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
           <input
             type="text"
             className="chat-input-field"
-            placeholder={isGroupChat ? "메시지를 입력하세요... (@봇 으로 AI 호출)" : "메시지를 입력하세요..."}
+            placeholder={
+              isRecording ? `녹음 중... (${recordingTime}초)` :
+              isTranscribing ? "음성 인식 중..." :
+              isGroupChat ? "메시지를 입력하세요... (@봇 으로 AI 호출)" : "메시지를 입력하세요..."
+            }
             value={inputValue}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            disabled={!isConnected}
+            disabled={!isConnected || isListening}
           />
+
+          {/* Voice input button */}
+          {isVoiceSupported && (
+            <button
+              className={`chat-voice-button ${isListening ? 'listening' : ''}`}
+              onClick={isListening ? stopListening : startListening}
+              disabled={!isConnected}
+              title={isListening ? '음성인식 중지' : '음성인식 시작'}
+            >
+              {isListening ? (
+                // 녹음 중 아이콘 (빨간 원)
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="8" fill="#ef4444" />
+                  <circle cx="12" cy="12" r="4" fill="white" className="pulse" />
+                </svg>
+              ) : (
+                // 마이크 아이콘
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1ZM12 13C11.45 13 11 12.55 11 12V4C11 3.45 11.45 3 12 3C12.55 3 13 3.45 13 4V12C13 12.55 12.55 13 12 13ZM17 11C17 14 14.76 16.43 12 16.93V20H14C14.55 20 15 20.45 15 21C15 21.55 14.55 22 14 22H10C9.45 22 9 21.55 9 21C9 20.45 9.45 20 10 20H12V16.93C9.24 16.43 7 14 7 11H5C5 14.53 7.61 17.43 11 17.93V20H10C9.45 20 9 20.45 9 21C9 21.55 9.45 22 10 22H14C14.55 22 15 21.55 15 21C15 20.45 14.55 20 14 20H13V17.93C16.39 17.43 19 14.53 19 11H17Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+            </button>
+          )}
+
           <button
             className="chat-send-button"
             onClick={sendMessage}

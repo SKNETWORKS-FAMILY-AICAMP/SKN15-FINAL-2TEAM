@@ -3,6 +3,7 @@ Django==4.2.9
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 django-environ==0.11.2
+django-filter==23.5
 
 # Database
 psycopg2-binary==2.9.9
@@ -28,6 +29,9 @@ openai==1.7.2
 sentence-transformers==2.2.2
 transformers==4.36.2
 torch==2.1.2
+torchaudio==2.1.2
+safetensors==0.4.1
+accelerate==0.25.0
 
 # Data Processing
 numpy==1.26.3

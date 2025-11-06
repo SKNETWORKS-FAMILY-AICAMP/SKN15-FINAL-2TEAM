@@ -23,6 +23,7 @@ import UnifiedChatWidget from '../src/components/planner/UnifiedChatWidget';
 import InviteCodeModal from '../src/components/planner/InviteCodeModal';
 import KakaoMapSearch, { KakaoMapSearchHandle } from '../src/components/KakaoMapSearch';
 import PlaceSearchSidebar from '../src/components/planner/PlaceSearchSidebar';
+import TravelInfoCard from '../src/components/planner/TravelInfoCard';
 import {
   ScheduleItem,
   TripData,
@@ -1448,6 +1449,14 @@ export default function Planner() {
                     </Box>
                   </Box>
                 )}
+
+                {/* Airflow 배치 데이터: 날씨, 환율, 여행경보 */}
+                <TravelInfoCard
+                  countryCode={selectedCountry || undefined}
+                  cityCode={selectedRegion1 || undefined}
+                  startDate={startDate}
+                  endDate={endDate}
+                />
               </>
             )}
 

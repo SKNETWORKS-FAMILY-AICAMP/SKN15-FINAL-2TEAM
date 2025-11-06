@@ -90,8 +90,15 @@ export function useCollaborativeChat({
 
           // Skip if this is a pending message we already added optimistically
           if (pendingMessagesRef.current.has(messageId)) {
+            console.log('⚠️ Skipping pending message (already added optimistically):', messageId.substring(0, 50));
             pendingMessagesRef.current.delete(messageId);
-            // Don't add to messages again, it's already there
+
+            // Update the temporary message with the real message_idx from server
+            setMessages(prev => prev.map(m =>
+              m.content === messageId && typeof m.message_idx === 'number' && m.message_idx > 1000000000000 // Find optimistic message (has timestamp as ID)
+                ? { ...m, message_idx: msgData.message_idx, created_at: msgData.created_at } // Update with real data
+                : m
+            ));
             break;
           }
 
@@ -104,7 +111,18 @@ export function useCollaborativeChat({
             payload_json: msgData.payload_json,
             created_at: msgData.created_at,
           };
-          setMessages(prev => [...prev, newMessage]);
+
+          // 중복 체크: message_idx가 이미 존재하면 추가하지 않음
+          setMessages(prev => {
+            // message_idx가 있고, 이미 존재하는 경우 중복으로 간주
+            if (newMessage.message_idx && prev.some(m => m.message_idx === newMessage.message_idx)) {
+              console.log('⚠️ Duplicate message detected, skipping:', newMessage.message_idx, newMessage.content.substring(0, 50));
+              return prev;
+            }
+            console.log('✅ Adding new message:', newMessage.message_idx, 'is_bot:', newMessage.is_bot, newMessage.content.substring(0, 50));
+            return [...prev, newMessage];
+          });
+
           if (onMessage) onMessage(newMessage);
           break;
 

@@ -25,10 +25,10 @@ class TravelPlannerAgent:
 
         logger.info(f"🤖 Initializing TravelPlannerAgent for room={room_id}, trip={trip_id}")
 
-        # LLM 초기화
+        # LLM 초기화 (환경변수에서 모델과 temperature 설정)
         self.llm = ChatOpenAI(
-            model="gpt-4-turbo-preview",
-            temperature=0.7,
+            model=getattr(settings, 'CHAT_AGENT_MODEL', 'gpt-4-turbo-preview'),
+            temperature=float(getattr(settings, 'CHAT_AGENT_TEMPERATURE', 0.7)),
             openai_api_key=settings.OPENAI_API_KEY
         )
 
@@ -62,76 +62,14 @@ class TravelPlannerAgent:
         )
 
     def _create_prompt(self):
-        """Agent 시스템 프롬프트"""
-        system_message = f"""당신은 전문 여행 플래너 비서입니다.
+        """Agent 시스템 프롬프트 (별도 파일에서 로드)"""
+        from .prompts import get_system_prompt
 
-당신의 역할:
-1. 사용자들의 여행 계획을 도와주기
-2. 일정에 장소를 추가/수정/삭제하기
-3. 여행지 정보 제공하기
-4. 최적의 여행 루트 제안하기
-5. 사용자의 모든 대화를 기억하고 맥락을 이해하기
-
-현재 여행 정보:
-- Trip ID: {self.trip_id}
-- Room ID: {self.room_id}
-
-사용 가능한 도구:
-📊 조회:
-- get_planner_info: 현재 플래너 정보 조회
-
-🏷️ 여행 정보 수정:
-- update_trip_info: 여행 제목, 인원, 국가/지역 변경
-- update_trip_dates: 여행 날짜 변경 (시작일, 종료일, Day 자동 생성)
-  * 날짜 형식: YYYY-MM-DD, MM-DD, M월 D일 모두 가능
-  * **매우 중요**: 년도 생략시 무조건 2025년 적용! (예: "28일"은 "2025-11-28", "1월 15일"은 "2025-01-15")
-  * 절대로 2023년, 2024년 사용 금지! 현재는 2025년입니다!
-
-📍 일정 추가/수정:
-- add_place_to_day: 특정 일차에 장소 추가
-- update_schedule: 일정 수정 (장소명, 시간, 메모)
-- move_schedule: 일정을 다른 날짜로 이동
-- reorder_schedule: 일정 순서 변경
-
-🗑️ 일정 삭제:
-- delete_schedule: 특정 장소 삭제
-- delete_all_schedules: 특정 일차 또는 전체 일정 삭제
-
-🔍 장소 검색 (강화된 기능):
-- search_place: 장소 검색 (DB + 카카오맵, 평점/좌표/카테고리 포함)
-- get_place_details: 특정 장소의 상세 정보 조회
-- search_nearby: 특정 위치 주변 장소 검색 (위도/경도 기반)
-- recommend_places: 인기 장소 추천 (지역/카테고리 필터 가능)
-- search_and_show_on_map: UI 지도에서 검색 (사용자가 지도에서 보고 싶어할 때)
-
-중요한 규칙:
-1. 항상 먼저 get_planner_info로 현재 일정을 확인하세요
-2. 장소를 추가할 때는 search_place로 정확한 이름을 확인하세요
-3. 사용자가 특정 장소 근처의 추천을 원하면 search_nearby를 사용하세요
-4. 지역별 인기 장소를 추천할 때는 recommend_places를 사용하세요
-5. 사용자가 "지도에서 보여줘", "지도로 찾아줘" 같은 요청을 하면 search_and_show_on_map을 사용하세요
-6. 친절하고 자세하게 답변하세요 (평점, 리뷰 수 등 유용한 정보 포함)
-7. 작업을 수행한 후 결과를 명확하게 알려주세요
-8. **날짜 처리 (매우 중요!)**:
-   - 현재 년도는 2025년입니다!
-   - 사용자가 년도 없이 날짜를 말하면 (예: "28일에서 30일로", "1월 15일로"),
-   - update_trip_dates 호출 시 반드시 "2025-MM-DD" 형식으로 전달하세요!
-   - 예: "28일에서 30일" → start_date="2025-11-28", end_date="2025-11-30"
-   - 절대로 2023년이나 2024년을 사용하지 마세요!
-
-사용자 요청 처리 가이드:
-- "어디갈지 추천해줘", "여행지 추천" 같은 요청: 먼저 get_planner_info로 여행 정보를 확인하고, 여행지 제목이나 국가/지역 정보를 바탕으로 recommend_places를 사용하세요.
-- 구체적인 지역이 없으면 사용자에게 어떤 지역이나 카테고리를 원하는지 물어보세요.
-- 예: "서울 여행이시군요! 서울의 인기 관광지를 추천해드릴까요, 아니면 맛집을 찾으시나요?"
-
-**중요: 장소 추천 응답 형식**
-- recommend_places 도구를 사용한 후에는 추천 결과를 마크다운 리스트로 정리해서 보여주세요.
-- 형식: "1. **장소명**: 설명" 또는 "1. **장소명** - 설명"
-- 각 장소마다 주소, 평점, 카테고리 등 유용한 정보를 포함하세요.
-- 사용자가 선택할 수 있도록 명확하고 읽기 쉽게 작성하세요.
-
-항상 한국어로 답변하세요.
-"""
+        # 프롬프트를 별도 파일에서 가져오기 (버전 관리 용이)
+        system_message = get_system_prompt(
+            trip_id=self.trip_id,
+            room_id=self.room_id
+        )
 
         return ChatPromptTemplate.from_messages([
             ("system", system_message),
@@ -877,6 +815,96 @@ class TravelPlannerAgent:
                 logger.error(f"❌ search_and_show_on_map error: {e}")
                 return f"❌ 지도 검색 실패: {str(e)}"
 
+        @tool
+        def recommend_similar_trips(query: str, limit: int = 5) -> str:
+            """실제 여행 블로그/영상 데이터를 기반으로 비슷한 여행 경로를 추천합니다. (RAG)
+
+            사용자가 "여행지 추천해줘", "어디갈지 추천", "유명한 코스 알려줘" 같은 요청을 할 때 사용하세요.
+            이 도구는 실제 여행자들의 경로 데이터를 검색하여 구체적인 일정과 코스를 제안합니다.
+
+            Args:
+                query: 검색 쿼리 (예: "서울 3박4일 여행", "제주도 가족 여행", "맛집 투어")
+                limit: 추천할 여행 경로 개수 (기본값: 5)
+
+            Returns:
+                추천 여행 경로 목록 (제목, URL, 일정, 유사도 포함)
+            """
+            from apps.ai.rag import get_rag
+            from apps.plans.models import TripPlan
+
+            try:
+                # 현재 여행 정보 가져오기
+                trip = TripPlan.objects.get(trip_idx=trip_id)
+
+                rag = get_rag()
+
+                # 현재 여행의 국가/지역 정보를 활용하여 검색
+                results = rag.search_similar_trips(
+                    query=query,
+                    country_code=trip.country_idx if trip.country_idx else None,
+                    region1_idx=trip.region1_idx if trip.region1_idx else None,
+                    limit=limit
+                )
+
+                if not results:
+                    return "😅 죄송합니다. 관련된 여행 경로를 찾지 못했습니다. 다른 키워드로 다시 검색해보세요."
+
+                # 결과를 읽기 쉬운 형식으로 포맷팅
+                response_lines = [f"🎯 '{query}' 검색 결과 ({len(results)}개의 추천 여행):"]
+                response_lines.append("")
+
+                for idx, result in enumerate(results, 1):
+                    similarity_percent = int(result['similarity_score'] * 100)
+                    response_lines.append(f"{idx}. **{result['title']}** (유사도: {similarity_percent}%)")
+
+                    if result['channel']:
+                        response_lines.append(f"   📺 채널: {result['channel']}")
+
+                    location_parts = []
+                    if result['country']:
+                        location_parts.append(result['country'])
+                    if result['city']:
+                        location_parts.append(result['city'])
+                    if location_parts:
+                        response_lines.append(f"   📍 위치: {' - '.join(location_parts)}")
+
+                    if result['views']:
+                        response_lines.append(f"   👀 조회수: {result['views']:,}회")
+
+                    if result['description']:
+                        desc = result['description'][:100]
+                        if len(result['description']) > 100:
+                            desc += "..."
+                        response_lines.append(f"   📝 {desc}")
+
+                    # 일정 정보 (있으면)
+                    if result['schedules']:
+                        schedule_summary = []
+                        for day_idx, day_schedule in enumerate(result['schedules'][:3], 1):  # 처음 3일만
+                            if isinstance(day_schedule, list) and day_schedule:
+                                places = " → ".join(day_schedule[:3])
+                                if len(day_schedule) > 3:
+                                    places += f" 외 {len(day_schedule) - 3}곳"
+                                schedule_summary.append(f"Day{day_idx}: {places}")
+                        if schedule_summary:
+                            response_lines.append(f"   🗓️ {', '.join(schedule_summary)}")
+
+                    if result['url']:
+                        response_lines.append(f"   🔗 [영상 보기]({result['url']})")
+
+                    response_lines.append("")  # 빈 줄
+
+                response_lines.append("💡 이 여행 경로들을 참고하여 일정을 구성하시겠어요? 원하시는 장소를 말씀해주시면 일정에 추가해드리겠습니다!")
+
+                logger.info(f"✨ RAG recommended {len(results)} trips for query: '{query}'")
+                return "\n".join(response_lines)
+
+            except TripPlan.DoesNotExist:
+                return "❌ 여행 정보를 찾을 수 없습니다."
+            except Exception as e:
+                logger.error(f"❌ recommend_similar_trips error: {e}", exc_info=True)
+                return f"❌ 추천 실패: {str(e)}"
+
         return [
             get_planner_info,
             add_place_to_day,
@@ -884,6 +912,7 @@ class TravelPlannerAgent:
             get_place_details,
             search_nearby,
             recommend_places,
+            recommend_similar_trips,  # 🆕 RAG 도구 추가!
             search_and_show_on_map,
             delete_schedule,
             update_schedule,
@@ -896,6 +925,17 @@ class TravelPlannerAgent:
 
     def run(self, user_message: str) -> str:
         """사용자 메시지 처리"""
+        from apps.chat.models import ChatRequest
+        from apps.plans.models import TripPlan
+        import time
+
+        start_time = time.time()
+        tools_used = []
+        success = True
+        error_msg = None
+        result = ""
+        request_type = None
+
         try:
             logger.info(f"🗣️ User message: {user_message}")
 
@@ -906,12 +946,57 @@ class TravelPlannerAgent:
             })
 
             result = response["output"]
+
+            # Extract tools used from intermediate_steps
+            if "intermediate_steps" in response:
+                tools_used = [step[0].tool for step in response["intermediate_steps"]]
+
+                # Infer request type from first tool used
+                if tools_used:
+                    first_tool = tools_used[0]
+                    if "add_place" in first_tool or "delete_schedule" in first_tool or "update_schedule" in first_tool:
+                        request_type = "schedule_edit"
+                    elif "search" in first_tool:
+                        request_type = "search"
+                    elif "recommend" in first_tool:
+                        request_type = "recommend"
+                    elif "get_planner_info" in first_tool:
+                        request_type = "info"
+                    else:
+                        request_type = "general"
+
             logger.info(f"🤖 Agent response: {result[:100]}...")
-            return result
+            logger.info(f"🔧 Tools used: {tools_used}")
 
         except Exception as e:
             logger.error(f"❌ Agent error: {e}", exc_info=True)
-            return f"죄송합니다. 오류가 발생했습니다: {str(e)}"
+            result = f"죄송합니다. 오류가 발생했습니다: {str(e)}"
+            success = False
+            error_msg = str(e)
+
+        finally:
+            # Log request to database
+            execution_time = int((time.time() - start_time) * 1000)
+
+            try:
+                trip = TripPlan.objects.get(trip_idx=self.trip_id)
+                ChatRequest.objects.create(
+                    room_idx_id=self.room_id,
+                    user_idx=None,  # Will be set by consumer if available
+                    trip_idx=trip,
+                    user_message=user_message,
+                    agent_response=result,
+                    tools_used=tools_used if tools_used else None,
+                    execution_time_ms=execution_time,
+                    request_type=request_type,
+                    success=success,
+                    error_message=error_msg
+                )
+                logger.info(f"💾 Request logged - execution: {execution_time}ms, tools: {len(tools_used)}")
+            except Exception as log_error:
+                logger.error(f"Failed to log request: {log_error}")
+
+        return result
 
 
 # Agent 인스턴스 관리 (방별로 하나씩 - 싱글톤)

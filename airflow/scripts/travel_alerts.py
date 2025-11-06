@@ -105,7 +105,7 @@ def save_to_db(alerts):
 
                 # 3️⃣ DB insert (중복 방지)
                 insert_sql = text("""
-                    INSERT INTO travel_alerts (country_code, level, url, created_at)
+                    INSERT INTO trip_alerts (country_code, level, url, created_at)
                     VALUES (:country_code, :level, :url, now())
                     ON CONFLICT (country_code)
                     DO UPDATE SET

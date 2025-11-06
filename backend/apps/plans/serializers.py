@@ -65,6 +65,8 @@ class TripPlanSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create trip and add owner as member"""
+        from datetime import timedelta
+
         user = self.context['request'].user
         validated_data['owner_user_idx'] = user
 
@@ -79,6 +81,20 @@ class TripPlanSerializer(serializers.ModelSerializer):
             user_idx=user,
             role='owner'
         )
+
+        # Auto-create TripDay entries based on start_date and end_date
+        if trip.start_date and trip.end_date:
+            current_date = trip.start_date
+            day_number = 1
+
+            while current_date <= trip.end_date:
+                TripDay.objects.create(
+                    trip_idx=trip,
+                    day_no=day_number,
+                    date=current_date
+                )
+                current_date += timedelta(days=1)
+                day_number += 1
 
         return trip
 

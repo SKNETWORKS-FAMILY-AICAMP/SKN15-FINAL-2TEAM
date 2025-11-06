@@ -91,44 +91,55 @@ def save_to_db(city_data_list):
                     country_name = city_info["member"]["memName"]
                     mem_id = city_info["member"].get("memId")
 
+                    # country_code와 city_code 매핑
+                    # 1. country_code 조회
+                    get_country_sql = text("""
+                        SELECT country_code FROM common_country
+                        WHERE country_name = :country_name
+                        LIMIT 1;
+                    """)
+                    country_result = conn.execute(get_country_sql, {"country_name": country_name}).fetchone()
+                    country_code = country_result[0] if country_result else None
+
+                    # 2. city_code 조회 (common_region1에서 city_name으로 검색)
+                    get_city_sql = text("""
+                        SELECT city_code FROM common_region1
+                        WHERE city_name = :city_name OR region1_name = :city_name
+                        LIMIT 1;
+                    """)
+                    city_result = conn.execute(get_city_sql, {"city_name": city_name}).fetchone()
+                    city_code = city_result[0] if city_result else None
+
+                    # city_code나 country_code가 없으면 skip
+                    if not city_code:
+                        logger.warning(f"City '{city_name}' not found in common_region1, skipping")
+                        continue
+
                     for day in city_info["forecast"]["forecastDay"]:
                         insert_sql = text("""
-                            INSERT INTO daily_weather_test (
-                                memId, cityId, cityName, countryName,
-                                forecastDate, weather, wxdesc,
-                                minTemp, maxTemp, minTempF, maxTempF, weatherIcon
+                            INSERT INTO weather_daily (
+                                country_code, city_code, forecast_date,
+                                weather, temp_min_c, temp_max_c, created_at
                             )
                             VALUES (
-                                :memId, :cityId, :cityName, :countryName,
-                                :forecastDate, :weather, :wxdesc,
-                                :minTemp, :maxTemp, :minTempF, :maxTempF, :weatherIcon
+                                :country_code, :city_code, :forecast_date,
+                                :weather, :temp_min_c, :temp_max_c, now()
                             )
-                            ON CONFLICT (cityId, forecastDate)
+                            ON CONFLICT (city_code, forecast_date)
                             DO UPDATE SET
-                                memId = EXCLUDED.memId,
-                                cityName = EXCLUDED.cityName,
-                                countryName = EXCLUDED.countryName,
+                                country_code = EXCLUDED.country_code,
                                 weather = EXCLUDED.weather,
-                                wxdesc = EXCLUDED.wxdesc,
-                                minTemp = EXCLUDED.minTemp,
-                                maxTemp = EXCLUDED.maxTemp,
-                                minTempF = EXCLUDED.minTempF,
-                                maxTempF = EXCLUDED.maxTempF,
-                                weatherIcon = EXCLUDED.weatherIcon
+                                temp_min_c = EXCLUDED.temp_min_c,
+                                temp_max_c = EXCLUDED.temp_max_c,
+                                created_at = now();
                         """)
                         conn.execute(insert_sql, {
-                            "memId": mem_id,
-                            "cityId": city_id,
-                            "cityName": city_name,
-                            "countryName": country_name,
-                            "forecastDate": day["forecastDate"],
+                            "country_code": country_code,
+                            "city_code": city_code,
+                            "forecast_date": day["forecastDate"],
                             "weather": day["weather"],
-                            "wxdesc": day.get("wxdesc", ""),
-                            "minTemp": to_float(day.get("minTemp")),
-                            "maxTemp": to_float(day.get("maxTemp")),
-                            "minTempF": to_float(day.get("minTempF")),
-                            "maxTempF": to_float(day.get("maxTempF")),
-                            "weatherIcon": to_float(day.get("weatherIcon")),
+                            "temp_min_c": to_float(day.get("minTemp")),
+                            "temp_max_c": to_float(day.get("maxTemp")),
                         })
                 except Exception as e:
                     logger.warning(f"DB 저장 중 오류 발생 (cityId={city.get('city', {}).get('cityId')}): {e}")

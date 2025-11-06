@@ -30,6 +30,9 @@ urlpatterns = [
     path('api/plans/', include('apps.plans.urls')),  # ✅ 활성화
     path('api/chat/', include('apps.chat.urls')),
     path('api/places/', include('apps.places.urls')),  # Places API
+    path('api/exchange/', include('apps.exchange.urls')),  # Exchange rates
+    path('api/weather/', include('apps.weather.urls')),  # Weather data
+    path('api/alerts/', include('apps.alerts.urls')),  # Travel alerts
     # path('api/ai/', include('apps.ai.urls')),
     # path('api/export/', include('apps.export.urls')),
 ]
