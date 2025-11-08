@@ -111,103 +111,78 @@ export default function Home() {
             {/* Chat Header */}
             <Box
               sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #364C84 0%, #2a3a66 100%)',
                 color: 'white',
                 p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.9rem' }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    px: 1,
-                    py: 0.5,
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  <span>🤖</span>
-                  <span>AI 어시스턴트</span>
-                </Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    px: 1,
-                    py: 0.5,
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  <span>👤</span>
-                  <span>나</span>
-                </Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    px: 1,
-                    py: 0.5,
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  <span>👥</span>
-                  <span>친구들</span>
-                </Box>
-                <Box
-                  sx={{
-                    ml: 'auto',
-                    bgcolor: 'rgba(255,255,255,0.3)',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: '10px',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  3명
-                </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                  제주도 2박 3일 여행
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                }}
+              >
+                3명 참여중
               </Box>
             </Box>
 
             {/* Chat Messages */}
-            <Box sx={{ p: 2.5, bgcolor: '#f8f9fa', maxHeight: 300, overflowY: 'auto' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#f8f9fa', maxHeight: 320, overflowY: 'auto' }}>
               {/* User Message */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '75%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3, justifyContent: 'flex-end' }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                      민지
+                    </Typography>
+                  </Box>
                   <Paper
                     sx={{
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      background: 'linear-gradient(135deg, #364C84, #2a3a66)',
                       color: 'white',
                       p: 1.5,
-                      borderRadius: '18px',
+                      borderRadius: '18px 18px 4px 18px',
+                      boxShadow: '0 2px 8px rgba(54, 76, 132, 0.25)',
                     }}
                   >
-                    <Typography variant="body2">3박 4일 도쿄 여행 계획을 짜줘!</Typography>
+                    <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                      제주도 2박 3일 여행 계획 짜줘!
+                    </Typography>
                   </Paper>
                 </Box>
               </Box>
 
               {/* AI Message */}
               <Box sx={{ display: 'flex', mb: 1.5 }}>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '75%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                      🤖 AI 어시스턴트
+                    </Typography>
+                  </Box>
                   <Paper
                     sx={{
-                      bgcolor: '#e3f2fd',
-                      border: '1px solid #bbdefb',
+                      bgcolor: 'white',
+                      border: '1px solid #e3e3e3',
                       p: 1.5,
-                      borderRadius: '18px',
+                      borderRadius: '18px 18px 18px 4px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     }}
                   >
-                    <Typography variant="body2">
-                      도쿄 3박 4일 여행을 계획해드릴게요! 🗾
+                    <Typography variant="body2" sx={{ lineHeight: 1.5, color: '#333' }}>
+                      제주도 2박 3일 여행을 계획해드릴게요! 🍊
                       <br />
                       선호하는 여행 스타일과 예산을 알려주시면
                       <br />
@@ -217,52 +192,75 @@ export default function Home() {
                 </Box>
               </Box>
 
-              {/* Friend Messages */}
+              {/* Friend Message 1 */}
               <Box sx={{ display: 'flex', mb: 1.5 }}>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '75%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                      수현
+                    </Typography>
+                  </Box>
                   <Paper
                     sx={{
-                      bgcolor: 'white',
-                      border: '1px solid #e0e0e0',
+                      bgcolor: '#fff',
+                      border: '1px solid #e3e3e3',
                       p: 1.5,
-                      borderRadius: '18px',
+                      borderRadius: '18px 18px 18px 4px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     }}
                   >
-                    <Typography variant="body2">우리 예산은 1인당 150만원 정도야!</Typography>
+                    <Typography variant="body2" sx={{ lineHeight: 1.5, color: '#333' }}>
+                      우리 예산은 1인당 50만원 정도!
+                    </Typography>
                   </Paper>
                 </Box>
               </Box>
 
+              {/* Friend Message 2 */}
               <Box sx={{ display: 'flex', mb: 1.5 }}>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '75%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                      지훈
+                    </Typography>
+                  </Box>
                   <Paper
                     sx={{
-                      bgcolor: 'white',
-                      border: '1px solid #e0e0e0',
+                      bgcolor: '#fff',
+                      border: '1px solid #e3e3e3',
                       p: 1.5,
-                      borderRadius: '18px',
+                      borderRadius: '18px 18px 18px 4px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     }}
                   >
-                    <Typography variant="body2">문화 체험이랑 맛집 위주로 가고싶어 ✨</Typography>
+                    <Typography variant="body2" sx={{ lineHeight: 1.5, color: '#333' }}>
+                      자연 경관이랑 맛집 위주로 가고 싶어요 🌊
+                    </Typography>
                   </Paper>
                 </Box>
               </Box>
 
               {/* AI Response */}
               <Box sx={{ display: 'flex' }}>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '75%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                    <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                      🤖 AI 어시스턴트
+                    </Typography>
+                  </Box>
                   <Paper
                     sx={{
-                      bgcolor: '#e3f2fd',
-                      border: '1px solid #bbdefb',
+                      bgcolor: 'white',
+                      border: '1px solid #e3e3e3',
                       p: 1.5,
-                      borderRadius: '18px',
+                      borderRadius: '18px 18px 18px 4px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     }}
                   >
-                    <Typography variant="body2">
-                      완벽해요! 문화 체험과 맛집 중심으로
+                    <Typography variant="body2" sx={{ lineHeight: 1.5, color: '#333' }}>
+                      완벽해요! 자연과 맛집 중심으로
                       <br />
-                      📍 아사쿠사 → 🍜 츠키지 → 🏛️ 메이지 신궁
+                      📍 성산일출봉 → 🍜 흑돼지 맛집 → 🌊 협재 해수욕장
                       <br />
                       이런 루트는 어떠세요? 상세 계획을 만들어드릴게요!
                     </Typography>
@@ -279,35 +277,47 @@ export default function Home() {
                 bgcolor: 'white',
                 borderTop: '1px solid #e0e0e0',
                 gap: 1,
+                alignItems: 'center',
               }}
             >
               <Box
                 sx={{
                   flex: 1,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '20px',
-                  p: '10px 15px',
-                  bgcolor: '#f5f5f5',
-                  fontSize: '0.9rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '22px',
+                  p: '11px 16px',
+                  bgcolor: '#f8f9fa',
+                  fontSize: '0.85rem',
                   color: '#999',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: '#f0f1f3',
+                    borderColor: '#ccc',
+                  },
                 }}
               >
                 메시지를 입력하세요...
               </Box>
               <Box
                 sx={{
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  background: 'linear-gradient(135deg, #364C84, #2a3a66)',
                   color: 'white',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '16px',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 4px 12px rgba(54, 76, 132, 0.3)',
+                  },
                 }}
               >
-                📤
+                ✈️
               </Box>
             </Box>
           </Paper>

@@ -124,43 +124,131 @@ class TravelPlannerAgent:
 
         @tool
         def add_place_to_day(day_no: int, place_name: str, time: str = "09:00", notes: str = "") -> str:
-            """특정 일차에 장소를 추가합니다.
+            """특정 일차에 장소를 추가합니다. (자동 검증 포함)
+
+            ⚠️ 중요: 이 도구를 사용하기 전에 반드시 search_place를 먼저 호출하여
+            정확한 장소명, 주소, 좌표를 확인한 후 사용하세요!
 
             Args:
                 day_no: 추가할 일차 (1, 2, 3...)
-                place_name: 장소명
+                place_name: 장소명 (search_place로 검색한 정확한 이름 사용 권장)
                 time: 방문 시간 (HH:MM 형식, 예: 09:00, 14:30)
                 notes: 메모나 설명
 
             Returns:
-                추가 결과 메시지
+                추가 결과 메시지 (주소, 좌표 포함)
             """
             from apps.plans.models import TripDay, TripItem
+            from apps.places.models import Place
+            from django.db.models import Q
+            import requests
+            from django.conf import settings
 
             try:
                 day = TripDay.objects.get(trip_idx=trip_id, day_no=day_no)
 
-                # 마지막 order 찾기
+                # 🆕 1. 장소 검증 및 검색 (자동으로 DB + Kakao 검색)
+                verified_place = None
+                verified_name = place_name
+                place_info = {}
+
+                # 1-1. 내부 DB에서 먼저 검색
+                try:
+                    db_place = Place.objects.filter(
+                        Q(name__icontains=place_name) | Q(ko_name__icontains=place_name)
+                    ).first()
+
+                    if db_place:
+                        verified_place = db_place
+                        verified_name = db_place.ko_name or db_place.name
+                        place_info = {
+                            'address': db_place.address,
+                            'latitude': float(db_place.latitude) if db_place.latitude else None,
+                            'longitude': float(db_place.longitude) if db_place.longitude else None,
+                            'rating': float(db_place.rating) if db_place.rating else None,
+                            'reviews': db_place.user_ratings_total,
+                            'phone': db_place.phone if hasattr(db_place, 'phone') else None,
+                        }
+                        logger.info(f"✅ Found place in DB: {verified_name} (ID: {db_place.place_idx})")
+                except Exception as db_error:
+                    logger.warning(f"⚠️ DB search failed: {db_error}")
+
+                # 1-2. DB에 없으면 카카오맵에서 검색
+                if not verified_place:
+                    try:
+                        url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+                        headers = {"Authorization": f"KakaoAK {settings.KAKAO_REST_API_KEY}"}
+                        params = {"query": place_name, "size": 1}
+
+                        response = requests.get(url, headers=headers, params=params, timeout=5)
+                        data = response.json()
+
+                        if data.get('documents'):
+                            place_data = data['documents'][0]
+                            verified_name = place_data['place_name']
+                            place_info = {
+                                'address': place_data.get('road_address_name') or place_data.get('address_name'),
+                                'latitude': float(place_data.get('y', 0)) if place_data.get('y') else None,
+                                'longitude': float(place_data.get('x', 0)) if place_data.get('x') else None,
+                                'category': place_data.get('category_name', ''),
+                                'phone': place_data.get('phone', ''),
+                            }
+                            logger.info(f"✅ Found place in Kakao: {verified_name}")
+                        else:
+                            logger.warning(f"⚠️ '{place_name}' not found in Kakao - using as-is")
+                    except Exception as kakao_error:
+                        logger.warning(f"⚠️ Kakao search failed: {kakao_error}")
+
+                # 🆕 2. 마지막 order 찾기
                 last_item = TripItem.objects.filter(day_idx=day.day_idx).order_by('-order_in_day').first()
                 order = (last_item.order_in_day + 1) if last_item else 1
 
-                # 장소 추가
+                # 🆕 3. TripItem 생성 (place_idx 연결 시도)
+                item_type = 'place' if verified_place else 'custom'
+
+                # notes에 장소 정보 추가 (기존 notes와 병합)
+                enhanced_notes = notes
+                if place_info.get('address'):
+                    enhanced_notes = f"{notes}\n📍 {place_info['address']}" if notes else f"📍 {place_info['address']}"
+                if place_info.get('rating'):
+                    enhanced_notes += f"\n⭐ {place_info['rating']}"
+                    if place_info.get('reviews'):
+                        enhanced_notes += f" ({place_info['reviews']:,}개 리뷰)"
+
                 TripItem.objects.create(
                     day_idx=day,
-                    item_type='custom',
-                    title=place_name,
+                    item_type=item_type,
+                    place_idx=verified_place,  # ← FK 연결 (DB에서 찾은 경우)
+                    title=verified_name,        # ← 검증된 이름
                     start_time=time,
-                    notes=notes,
+                    notes=enhanced_notes.strip(),
                     order_in_day=order,
                     lock_flag=False
                 )
 
-                logger.info(f"✅ Added '{place_name}' to Day {day_no} at {time}")
-                return f"✅ Day {day_no}에 '{place_name}'을(를) 추가했습니다 (시간: {time})"
+                # 🆕 4. 상세 정보 포함한 응답 생성
+                response_msg = f"✅ Day {day_no}에 '{verified_name}'을(를) 추가했습니다 (시간: {time})"
+
+                if place_info.get('address'):
+                    response_msg += f"\n📍 주소: {place_info['address']}"
+                if place_info.get('latitude') and place_info.get('longitude'):
+                    response_msg += f"\n🗺️ 좌표: ({place_info['latitude']:.6f}, {place_info['longitude']:.6f})"
+                if place_info.get('rating'):
+                    response_msg += f"\n⭐ 평점: {place_info['rating']}"
+                    if place_info.get('reviews'):
+                        response_msg += f" ({place_info['reviews']:,}개 리뷰)"
+                if verified_place:
+                    response_msg += f"\n🔗 DB 연결됨 (place_idx: {verified_place.place_idx})"
+                else:
+                    response_msg += "\n💡 Tip: 더 정확한 정보를 위해 search_place를 먼저 사용해보세요!"
+
+                logger.info(f"✅ Added place: {verified_name} (place_idx: {verified_place.place_idx if verified_place else 'NULL'}, order: {order})")
+                return response_msg
+
             except TripDay.DoesNotExist:
                 return f"❌ Day {day_no}을(를) 찾을 수 없습니다. 먼저 여행 날짜를 설정해주세요."
             except Exception as e:
-                logger.error(f"❌ add_place_to_day error: {e}")
+                logger.error(f"❌ add_place_to_day error: {e}", exc_info=True)
                 return f"❌ 추가 실패: {str(e)}"
 
         @tool
@@ -783,6 +871,8 @@ class TravelPlannerAgent:
         def search_and_show_on_map(keyword: str, region: str = None) -> str:
             """UI의 카카오맵에서 장소를 검색합니다. 사용자가 지도에서 확인하고 싶어할 때 사용하세요.
 
+            ⚠️ 주의: 이 도구는 지도에만 표시합니다. 일정에 추가하려면 search_on_map_and_add를 사용하세요!
+
             Args:
                 keyword: 검색할 장소명
                 region: 지역 필터 (선택)
@@ -814,6 +904,154 @@ class TravelPlannerAgent:
             except Exception as e:
                 logger.error(f"❌ search_and_show_on_map error: {e}")
                 return f"❌ 지도 검색 실패: {str(e)}"
+
+        @tool
+        def search_on_map_and_add(day_no: int, place_name: str, time: str = "09:00", notes: str = "") -> str:
+            """🆕 지도에서 장소를 검색하고 일정에 자동으로 추가합니다. (통합 도구)
+
+            사용자가 "Day 1에 경복궁 추가해줘" 같은 요청을 하면 이 도구를 사용하세요!
+            1. 지도에서 장소 검색 (UI에 표시)
+            2. 검색된 정확한 정보로 일정에 추가
+            3. 사용자에게 결과 알림
+
+            Args:
+                day_no: 추가할 일차 (1, 2, 3...)
+                place_name: 검색할 장소명 (예: "경복궁", "남산타워")
+                time: 방문 시간 (HH:MM 형식, 예: 09:00, 14:30)
+                notes: 추가 메모
+
+            Returns:
+                지도 검색 + 일정 추가 결과
+            """
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from apps.plans.models import TripDay, TripItem
+            from apps.places.models import Place
+            from django.db.models import Q
+            import requests
+            from django.conf import settings
+
+            try:
+                # 🗺️ Step 1: 지도에 검색 표시 (UI)
+                channel_layer = get_channel_layer()
+                room_group_name = f'trip_chat_{self.room_id}'
+
+                async_to_sync(channel_layer.group_send)(
+                    room_group_name,
+                    {
+                        'type': 'map_search',
+                        'keyword': place_name,
+                        'region': None,
+                        'message': f"'{place_name}' 검색 중..."
+                    }
+                )
+                logger.info(f"🗺️ Map search sent: {place_name}")
+
+                # 🔍 Step 2: 장소 검증 및 검색 (DB + Kakao)
+                verified_place = None
+                verified_name = place_name
+                place_info = {}
+
+                # 2-1. 내부 DB 검색
+                try:
+                    db_place = Place.objects.filter(
+                        Q(name__icontains=place_name) | Q(ko_name__icontains=place_name)
+                    ).first()
+
+                    if db_place:
+                        verified_place = db_place
+                        verified_name = db_place.ko_name or db_place.name
+                        place_info = {
+                            'address': db_place.address,
+                            'latitude': float(db_place.latitude) if db_place.latitude else None,
+                            'longitude': float(db_place.longitude) if db_place.longitude else None,
+                            'rating': float(db_place.rating) if db_place.rating else None,
+                            'reviews': db_place.user_ratings_total,
+                            'phone': db_place.phone if hasattr(db_place, 'phone') else None,
+                        }
+                        logger.info(f"✅ Found in DB: {verified_name} (ID: {db_place.place_idx})")
+                except Exception as db_error:
+                    logger.warning(f"⚠️ DB search failed: {db_error}")
+
+                # 2-2. Kakao 검색 (DB에 없으면)
+                if not verified_place:
+                    try:
+                        url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+                        headers = {"Authorization": f"KakaoAK {settings.KAKAO_REST_API_KEY}"}
+                        params = {"query": place_name, "size": 1}
+
+                        response = requests.get(url, headers=headers, params=params, timeout=5)
+                        data = response.json()
+
+                        if data.get('documents'):
+                            place_data = data['documents'][0]
+                            verified_name = place_data['place_name']
+                            place_info = {
+                                'address': place_data.get('road_address_name') or place_data.get('address_name'),
+                                'latitude': float(place_data.get('y', 0)) if place_data.get('y') else None,
+                                'longitude': float(place_data.get('x', 0)) if place_data.get('x') else None,
+                                'category': place_data.get('category_name', ''),
+                                'phone': place_data.get('phone', ''),
+                            }
+                            logger.info(f"✅ Found in Kakao: {verified_name}")
+                        else:
+                            logger.warning(f"⚠️ '{place_name}' not found - using as-is")
+                    except Exception as kakao_error:
+                        logger.warning(f"⚠️ Kakao search failed: {kakao_error}")
+
+                # ➕ Step 3: 일정에 추가
+                day = TripDay.objects.get(trip_idx=trip_id, day_no=day_no)
+
+                # 마지막 order 찾기
+                last_item = TripItem.objects.filter(day_idx=day.day_idx).order_by('-order_in_day').first()
+                order = (last_item.order_in_day + 1) if last_item else 1
+
+                # TripItem 생성
+                item_type = 'place' if verified_place else 'custom'
+
+                # notes에 장소 정보 추가
+                enhanced_notes = notes
+                if place_info.get('address'):
+                    enhanced_notes = f"{notes}\n📍 {place_info['address']}" if notes else f"📍 {place_info['address']}"
+                if place_info.get('rating'):
+                    enhanced_notes += f"\n⭐ {place_info['rating']}"
+                    if place_info.get('reviews'):
+                        enhanced_notes += f" ({place_info['reviews']:,}개 리뷰)"
+
+                TripItem.objects.create(
+                    day_idx=day,
+                    item_type=item_type,
+                    place_idx=verified_place,
+                    title=verified_name,
+                    start_time=time,
+                    notes=enhanced_notes.strip(),
+                    order_in_day=order,
+                    lock_flag=False
+                )
+
+                # 📢 Step 4: 결과 메시지 생성
+                response_msg = f"✅ Day {day_no}에 '{verified_name}'을(를) 추가했습니다! (시간: {time})\n"
+                response_msg += f"🗺️ 지도에서 위치를 확인할 수 있습니다.\n"
+
+                if place_info.get('address'):
+                    response_msg += f"📍 주소: {place_info['address']}\n"
+                if place_info.get('latitude') and place_info.get('longitude'):
+                    response_msg += f"🗺️ 좌표: ({place_info['latitude']:.6f}, {place_info['longitude']:.6f})\n"
+                if place_info.get('rating'):
+                    response_msg += f"⭐ 평점: {place_info['rating']}"
+                    if place_info.get('reviews'):
+                        response_msg += f" ({place_info['reviews']:,}개 리뷰)\n"
+                if verified_place:
+                    response_msg += f"🔗 DB 연결됨 (place_idx: {verified_place.place_idx})"
+
+                logger.info(f"✅ Map search + add complete: {verified_name} to Day {day_no}")
+                return response_msg.strip()
+
+            except TripDay.DoesNotExist:
+                return f"❌ Day {day_no}을(를) 찾을 수 없습니다. 먼저 여행 날짜를 설정해주세요."
+            except Exception as e:
+                logger.error(f"❌ search_on_map_and_add error: {e}", exc_info=True)
+                return f"❌ 추가 실패: {str(e)}"
 
         @tool
         def recommend_similar_trips(query: str, limit: int = 5) -> str:
@@ -907,6 +1145,7 @@ class TravelPlannerAgent:
 
         return [
             get_planner_info,
+            search_on_map_and_add,     # 🆕 맵 검색 + 추가 통합 도구! (우선순위 높음)
             add_place_to_day,
             search_place,
             get_place_details,

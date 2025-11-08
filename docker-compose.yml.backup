@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with pgvector
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: triplan-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-triplan}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/pgvector-setup.sql:/docker-entrypoint-initdb.d/02-pgvector-setup.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triplan-network
+
+  # Redis for Channel Layer and Cache
+  redis:
+    image: redis:7-alpine
+    container_name: triplan-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triplan-network
+
+  # Django Backend (Gunicorn for REST API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 300 --graceful-timeout 300"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-temp-secret-key-for-development-only}
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
+      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ./backend:/app
+      - ./data/static:/app/staticfiles
+      - ./data/media:/app/media
+      - ./data/exports:/app/exports
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - triplan-network
+
+  # Django WebSocket Server (Daphne for WebSocket)
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triplan-websocket
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-temp-secret-key-for-development-only}
+      - POSTGRES_DB=${POSTGRES_DB:-lecun2}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
+      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - KAKAO_API_KEY=${KAKAO_API_KEY:-}
+      - KAKAO_MAP_API_KEY=${KAKAO_MAP_API_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - triplan-network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ""
+        NEXT_PUBLIC_WS_URL: ""
+        NEXT_PUBLIC_KAKAO_API_KEY: ${NEXT_PUBLIC_KAKAO_API_KEY}
+    container_name: triplan-frontend
+    command: sh -c "npm run dev"   # 개발 서버 실행 - Hot Reload!
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_KAKAO_API_KEY=${NEXT_PUBLIC_KAKAO_API_KEY}
+    volumes:
+      - ./frontend:/app          # 로컬 코드 마운트 - Hot Reload 가능!
+      - /app/node_modules        # node_modules는 컨테이너 것 사용
+      - /app/.next               # .next 빌드 캐시도 컨테이너 것 사용
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - triplan-network
+
+  # Airflow Postgres (separate from main DB)
+  airflow-postgres:
+    image: postgres:15-alpine
+    container_name: triplan-airflow-db
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+    volumes:
+      - ./data/airflow-postgres:/var/lib/postgresql/data
+    networks:
+      - triplan-network
+
+  # Airflow Webserver
+  airflow-webserver:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-webserver
+    command: webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
+      - AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
+      - AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data/airflow-data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - airflow-postgres
+      - postgres
+    networks:
+      - triplan-network
+
+  # Airflow Scheduler
+  airflow-scheduler:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-scheduler
+    command: scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data/airflow-data:/opt/airflow/data
+    depends_on:
+      - airflow-postgres
+      - postgres
+    networks:
+      - triplan-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: triplan-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./data/static:/static
+      - ./data/media:/media
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - triplan-network
+
+networks:
+  triplan-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  airflow-postgres-data:
