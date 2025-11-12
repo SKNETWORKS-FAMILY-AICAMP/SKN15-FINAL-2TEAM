@@ -1,5 +1,5 @@
 from django.db import models
-from apps.common.models import Country, Region1, Region2, PlacesCategory
+from apps.common.models import Country, Province, City, District, PlacesCategory
 
 
 class Place(models.Model):
@@ -15,19 +15,26 @@ class Place(models.Model):
         blank=True,
         db_column='country_idx'
     )
-    region1_idx = models.ForeignKey(
-        Region1,
+    province_idx = models.ForeignKey(
+        Province,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region1_idx'
+        db_column='province_idx'
     )
-    region2_idx = models.ForeignKey(
-        Region2,
+    city_idx = models.ForeignKey(
+        City,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region2_idx'
+        db_column='city_idx'
+    )
+    district_idx = models.ForeignKey(
+        District,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='district_idx'
     )
     types = models.TextField(null=True, blank=True)
     address = models.TextField(null=True, blank=True)

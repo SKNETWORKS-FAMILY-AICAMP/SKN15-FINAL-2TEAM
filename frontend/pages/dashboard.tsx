@@ -19,6 +19,8 @@ import {
   Toolbar,
   Button,
   CircularProgress,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   LineChart,
@@ -37,6 +39,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../src/hooks/useAuth';
 import api from '../src/services/api';
+import YouTubeCrawler from '../src/components/admin/YouTubeCrawler';
 
 interface AdminStats {
   success: boolean;
@@ -79,6 +82,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState(0);
 
   useEffect(() => {
     // Wait for auth to finish loading
@@ -170,7 +174,20 @@ export default function AdminPage() {
         </Toolbar>
       </AppBar>
 
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
+        <Container maxWidth="xl">
+          <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
+            <Tab label="📊 통계 대시보드" />
+            <Tab label="🎬 YouTube 크롤러" />
+          </Tabs>
+        </Container>
+      </Box>
+
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Tab 0: 통계 대시보드 */}
+        {currentTab === 0 && (
+          <Box>
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
@@ -465,6 +482,13 @@ export default function AdminPage() {
             </TableContainer>
           </CardContent>
         </Card>
+          </Box>
+        )}
+
+        {/* Tab 1: YouTube 크롤러 */}
+        {currentTab === 1 && (
+          <YouTubeCrawler />
+        )}
       </Container>
     </Box>
   );

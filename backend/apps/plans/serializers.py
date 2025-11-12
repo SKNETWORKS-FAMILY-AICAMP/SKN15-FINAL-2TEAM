@@ -43,15 +43,16 @@ class TripPlanSerializer(serializers.ModelSerializer):
     owner_email = serializers.EmailField(source='owner_user_idx.email', read_only=True)
     member_count = serializers.SerializerMethodField()
     country_name = serializers.CharField(source='country_idx.country_name', read_only=True)
-    region1_name = serializers.CharField(source='region1_idx.region1_name', read_only=True)
-    region2_name = serializers.CharField(source='region2_idx.region2_name', read_only=True)
+    province_name = serializers.CharField(source='province_idx.name', read_only=True)
+    city_name = serializers.CharField(source='city_idx.name', read_only=True)
+    district_name = serializers.CharField(source='district_idx.name', read_only=True)
 
     class Meta:
         model = TripPlan
         fields = [
             'trip_idx', 'owner_user_idx', 'owner_email', 'title',
-            'country_idx', 'region1_idx', 'region2_idx',
-            'country_name', 'region1_name', 'region2_name',
+            'country_idx', 'province_idx', 'city_idx', 'district_idx',
+            'country_name', 'province_name', 'city_name', 'district_name',
             'start_date', 'end_date', 'party_size',
             'budget_currency', 'budget_amount', 'status',
             'invite_code', 'invite_code_expires_at', 'user_satisfaction',

@@ -7,8 +7,9 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'countries', views.CountryViewSet, basename='country')
-router.register(r'regions1', views.Region1ViewSet, basename='region1')
-router.register(r'regions2', views.Region2ViewSet, basename='region2')
+router.register(r'provinces', views.ProvinceViewSet, basename='province')
+router.register(r'cities', views.CityViewSet, basename='city')
+router.register(r'districts', views.DistrictViewSet, basename='district')
 router.register(r'categories', views.PlacesCategoryViewSet, basename='category')
 router.register(r'electric', views.CountryElectricViewSet, basename='electric')
 

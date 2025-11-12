@@ -6,11 +6,11 @@ export interface TripPlan {
   owner_user_idx: number;
   title: string;
   country_idx?: number;
-  region1_idx?: number;
-  region2_idx?: number;
+  province_idx?: number;
+  city_idx?: number;
   country_name?: string;
-  region1_name?: string;
-  region2_name?: string;
+  province_name?: string;
+  city_name?: string;
   start_date: string;
   end_date: string;
   party_size?: number;
@@ -215,6 +215,35 @@ const tripAPI = {
     const response = await api.post(`/api/plans/trips/${tripId}/submit_satisfaction/`, {
       satisfaction,
     });
+    return response.data;
+  },
+
+  // Get weather by days (based on first item's location per day)
+  getWeatherByDays: async (tripId: number): Promise<{
+    success: boolean;
+    trip_idx: number;
+    days: Array<{
+      day_no: number;
+      date: string;
+      weather: {
+        weather_daily_idx: number;
+        forecast_date: string;
+        weather_am: string | null;
+        weather_pm: string | null;
+        temp_min_c: number | null;
+        temp_max_c: number | null;
+        precipitation_am: number | null;
+        precipitation_pm: number | null;
+        location: {
+          province: string | null;
+          city: string | null;
+          district: string | null;
+        };
+      } | null;
+      first_place: string | null;
+    }>;
+  }> => {
+    const response = await api.get(`/api/plans/trips/${tripId}/weather-by-days/`);
     return response.data;
   },
 };

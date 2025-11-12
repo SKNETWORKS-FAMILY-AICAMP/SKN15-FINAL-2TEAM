@@ -570,6 +570,100 @@ class TripPlanViewSet(viewsets.ModelViewSet):
             'satisfaction': satisfaction
         })
 
+    @action(detail=True, methods=['get'], url_path='weather-by-days')
+    def weather_by_days(self, request, pk=None):
+        """
+        Get weather for each day based on the first item's location
+        각 일차의 첫 번째 일정 위치를 기준으로 날씨 가져오기
+        """
+        from apps.weather.models import WeatherDaily
+        from apps.places.models import Place
+
+        trip = self.get_object()
+
+        # Get all days with their items
+        days = trip.days.prefetch_related(
+            'items__place_idx__province_idx',
+            'items__place_idx__city_idx',
+            'items__place_idx__district_idx'
+        ).order_by('day_no')
+
+        result = []
+
+        for day in days:
+            # Get first item (place_idx 유무 상관없이)
+            first_item = day.items.order_by('order_in_day').first()
+
+            weather_data = None
+            location_info = None
+
+            # 일정이 있으면 주소를 파싱해서 날씨 조회
+            if first_item and first_item.notes:
+                from apps.common.address_parser import parse_korean_address
+
+                # notes에서 주소 추출 (📍 이모지 뒤의 주소)
+                address = first_item.notes
+                if '📍' in address:
+                    address = address.split('📍')[1].split('\n')[0].strip()
+
+                # 주소 파싱
+                parsed = parse_korean_address(address)
+                if parsed['district'] or parsed['city'] or parsed['province']:
+                    location_info = {
+                        'district_idx': parsed['district'],
+                        'city_idx': parsed['city'],
+                        'province_idx': parsed['province'],
+                        'district_name': parsed['district'].name if parsed['district'] else None,
+                        'city_name': parsed['city'].name if parsed['city'] else None,
+                        'province_name': parsed['province'].name if parsed['province'] else None,
+                    }
+
+            # Fetch weather using location hierarchy (district > city > province)
+            if location_info:
+                try:
+                    weather_query = WeatherDaily.objects.filter(forecast_date=day.date)
+
+                    if location_info['district_idx']:
+                        weather = weather_query.filter(district_idx=location_info['district_idx']).first()
+                    elif location_info['city_idx']:
+                        weather = weather_query.filter(city_idx=location_info['city_idx']).first()
+                    elif location_info['province_idx']:
+                        weather = weather_query.filter(province_idx=location_info['province_idx']).first()
+                    else:
+                        weather = None
+
+                    if weather:
+                        weather_data = {
+                            'weather_daily_idx': weather.weather_daily_idx,
+                            'forecast_date': str(weather.forecast_date),
+                            'weather_am': weather.weather_am,
+                            'weather_pm': weather.weather_pm,
+                            'temp_min_c': float(weather.temp_min_c) if weather.temp_min_c else None,
+                            'temp_max_c': float(weather.temp_max_c) if weather.temp_max_c else None,
+                            'precipitation_am': weather.precipitation_am,
+                            'precipitation_pm': weather.precipitation_pm,
+                            'location': {
+                                'province': location_info['province_name'],
+                                'city': location_info['city_name'],
+                                'district': location_info['district_name'],
+                            }
+                        }
+                except Exception as e:
+                    print(f"Error fetching weather for day {day.day_no}: {e}")
+
+            result.append({
+                'day_no': day.day_no,
+                'date': str(day.date),
+                'weather': weather_data,
+                'first_place': first_item.title if first_item else None
+            })
+
+        return Response({
+            'success': True,
+            'trip_idx': trip.trip_idx,
+            'days': result
+        })
+
 
 class TripDayViewSet(viewsets.ModelViewSet):
     """Trip Day ViewSet"""

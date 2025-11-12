@@ -112,11 +112,22 @@ export function useCollaborativeChat({
             created_at: msgData.created_at,
           };
 
-          // 중복 체크: message_idx가 이미 존재하면 추가하지 않음
+          // 중복 체크: message_idx 또는 content가 이미 존재하면 추가하지 않음
           setMessages(prev => {
             // message_idx가 있고, 이미 존재하는 경우 중복으로 간주
             if (newMessage.message_idx && prev.some(m => m.message_idx === newMessage.message_idx)) {
-              console.log('⚠️ Duplicate message detected, skipping:', newMessage.message_idx, newMessage.content.substring(0, 50));
+              console.log('⚠️ Duplicate message detected (by message_idx), skipping:', newMessage.message_idx, newMessage.content.substring(0, 50));
+              return prev;
+            }
+            // content와 is_bot 상태가 같고, 1초 이내에 추가된 메시지는 중복으로 간주
+            const isDuplicateContent = prev.some(m => {
+              if (m.content !== newMessage.content) return false;
+              if (m.is_bot !== newMessage.is_bot) return false;
+              const timeDiff = Math.abs(new Date(m.created_at).getTime() - new Date(newMessage.created_at).getTime());
+              return timeDiff < 1000; // 1초 이내
+            });
+            if (isDuplicateContent) {
+              console.log('⚠️ Duplicate message detected (by content), skipping:', newMessage.content.substring(0, 50));
               return prev;
             }
             console.log('✅ Adding new message:', newMessage.message_idx, 'is_bot:', newMessage.is_bot, newMessage.content.substring(0, 50));

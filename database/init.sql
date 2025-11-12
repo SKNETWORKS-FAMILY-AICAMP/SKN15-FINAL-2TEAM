@@ -2,11 +2,11 @@
 -- This script runs when the PostgreSQL container is first created
 
 -- Create database if not exists
-SELECT 'CREATE DATABASE triplan'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'triplan')\gexec
+SELECT 'CREATE DATABASE lecun2'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'lecun2')\gexec
 
 -- Connect to the database
-\c triplan
+\c lecun2
 
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -23,5 +23,5 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA travel TO postgres;
 -- Log message
 DO $$
 BEGIN
-    RAISE NOTICE 'Database triplan initialized successfully';
+    RAISE NOTICE 'Database lecun2 initialized successfully';
 END $$;

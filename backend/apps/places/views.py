@@ -17,7 +17,7 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
     nearby: Get places near a specific location
     """
     queryset = Place.objects.select_related(
-        'country_idx', 'region1_idx', 'region2_idx'
+        'country_idx', 'province_idx', 'city_idx', 'district_idx'
     ).all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -34,18 +34,22 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
 
         # Filter by region
-        region1 = self.request.query_params.get('region1', None)
-        region2 = self.request.query_params.get('region2', None)
+        province = self.request.query_params.get('province', None)
+        city = self.request.query_params.get('city', None)
+        district = self.request.query_params.get('district', None)
         country = self.request.query_params.get('country', None)
 
         if country:
             queryset = queryset.filter(country_idx__country_name__icontains=country)
-        
-        if region1:
-            queryset = queryset.filter(region1_idx__city_name__icontains=region1)
 
-        if region2:
-            queryset = queryset.filter(region2_idx__region2_name__icontains=region2)
+        if province:
+            queryset = queryset.filter(province_idx__name__icontains=province)
+
+        if city:
+            queryset = queryset.filter(city_idx__name__icontains=city)
+
+        if district:
+            queryset = queryset.filter(district_idx__name__icontains=district)
 
         # Filter by types
         place_type = self.request.query_params.get('type', None)

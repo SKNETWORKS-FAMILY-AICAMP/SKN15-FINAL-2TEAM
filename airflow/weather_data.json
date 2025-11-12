@@ -1,0 +1,1122 @@
+{
+  "location": {
+    "code": "1154561000",
+    "latitude": 37.4677007,
+    "longitude": 126.8927675
+  },
+  "crawled_at": "2025-11-08T15:17:54.962797",
+  "daily_forecasts": [
+    {
+      "date": "2025-11-08",
+      "date_text": "8일",
+      "week_day": "6",
+      "label": "오늘",
+      "weather": {
+        "am": "-",
+        "pm": "흐림"
+      },
+      "temperature": {
+        "min": "13℃",
+        "max": "19℃"
+      },
+      "precipitation_probability": {
+        "am": "-",
+        "pm": "30%"
+      }
+    },
+    {
+      "date": "2025-11-09",
+      "date_text": "9일",
+      "week_day": "0",
+      "label": "내일",
+      "weather": {
+        "am": "가끔 비",
+        "pm": "구름많음"
+      },
+      "temperature": {
+        "min": "11℃",
+        "max": "16℃"
+      },
+      "precipitation_probability": {
+        "am": "60%",
+        "pm": "20%"
+      }
+    },
+    {
+      "date": "2025-11-10",
+      "date_text": "10일",
+      "week_day": "1",
+      "label": "모레",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "6℃",
+        "max": "11℃"
+      },
+      "precipitation_probability": {
+        "am": "0%",
+        "pm": "0%"
+      }
+    },
+    {
+      "date": "2025-11-11",
+      "date_text": "11일",
+      "week_day": "2",
+      "label": "(화)",
+      "weather": {
+        "am": "구름많음",
+        "pm": "구름많음"
+      },
+      "temperature": {
+        "min": "3℃",
+        "max": "14℃"
+      },
+      "precipitation_probability": {
+        "am": "20%",
+        "pm": "10%"
+      }
+    },
+    {
+      "date": "2025-11-12",
+      "date_text": "12일",
+      "week_day": "3",
+      "label": "(수)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "6℃",
+        "max": "15℃"
+      },
+      "precipitation_probability": {
+        "am": "10%",
+        "pm": "10%"
+      }
+    },
+    {
+      "date": "2025-11-13",
+      "date_text": "13일",
+      "week_day": "4",
+      "label": "(목)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "7℃",
+        "max": "14℃"
+      },
+      "precipitation_probability": {
+        "am": "10%",
+        "pm": "10%"
+      }
+    },
+    {
+      "date": "2025-11-14",
+      "date_text": "14일",
+      "week_day": "5",
+      "label": "(금)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "6℃",
+        "max": "13℃"
+      },
+      "precipitation_probability": {
+        "am": "10%",
+        "pm": "10%"
+      }
+    },
+    {
+      "date": "2025-11-15",
+      "date_text": "15일",
+      "week_day": "6",
+      "label": "(토)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "5℃",
+        "max": "12℃"
+      },
+      "precipitation_probability": {
+        "am": "20%",
+        "pm": "20%"
+      }
+    },
+    {
+      "date": "2025-11-16",
+      "date_text": "16일",
+      "week_day": "0",
+      "label": "(일)",
+      "weather": {
+        "am": "구름많음",
+        "pm": "구름많음"
+      },
+      "temperature": {
+        "min": "5℃",
+        "max": "12℃"
+      },
+      "precipitation_probability": {
+        "am": "30%",
+        "pm": "30%"
+      }
+    },
+    {
+      "date": "2025-11-17",
+      "date_text": "17일",
+      "week_day": "1",
+      "label": "(월)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "5℃",
+        "max": "11℃"
+      },
+      "precipitation_probability": {
+        "am": "20%",
+        "pm": "20%"
+      }
+    },
+    {
+      "date": "2025-11-18",
+      "date_text": "18일",
+      "week_day": "2",
+      "label": "(화)",
+      "weather": {
+        "am": "맑음",
+        "pm": "맑음"
+      },
+      "temperature": {
+        "min": "-1℃",
+        "max": "8℃"
+      },
+      "precipitation_probability": {
+        "am": "20%",
+        "pm": "20%"
+      }
+    }
+  ],
+  "hourly_forecasts": [
+    {
+      "date": "2025-11-08",
+      "time": "16:00",
+      "time_text": "16시",
+      "weather": "흐림",
+      "temperature": "18",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "-",
+        "speed": "-"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "17:00",
+      "time_text": "17시",
+      "weather": "흐림",
+      "temperature": "16",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "18:00",
+      "time_text": "18시",
+      "weather": "흐림",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "19:00",
+      "time_text": "19시",
+      "weather": "흐림",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "20:00",
+      "time_text": "20시",
+      "weather": "흐림",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "21:00",
+      "time_text": "21시",
+      "weather": "흐림",
+      "temperature": "14",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남동풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "22:00",
+      "time_text": "22시",
+      "weather": "흐림",
+      "temperature": "14",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남동풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "23:00",
+      "time_text": "23시",
+      "weather": "흐림",
+      "temperature": "13",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남동풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-08",
+      "time": "24:00",
+      "time_text": "0시",
+      "weather": "흐림",
+      "temperature": "13",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남동풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "01:00",
+      "time_text": "01시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "02:00",
+      "time_text": "02시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "03:00",
+      "time_text": "03시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "-",
+        "speed": "-"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "04:00",
+      "time_text": "04시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "05:00",
+      "time_text": "05시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "-",
+        "speed": "-"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "06:00",
+      "time_text": "06시",
+      "weather": "약한비",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "약한비",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "07:00",
+      "time_text": "07시",
+      "weather": "약한비",
+      "temperature": "11",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "약한비",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "08:00",
+      "time_text": "08시",
+      "weather": "약한비",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "약한비",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "남서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "09:00",
+      "time_text": "09시",
+      "weather": "약한비",
+      "temperature": "13",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "약한비",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "10:00",
+      "time_text": "10시",
+      "weather": "약한비",
+      "temperature": "14",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "약한비",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "11:00",
+      "time_text": "11시",
+      "weather": "흐림",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "12:00",
+      "time_text": "12시",
+      "weather": "흐림",
+      "temperature": "16",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "13:00",
+      "time_text": "13시",
+      "weather": "흐림",
+      "temperature": "16",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "14:00",
+      "time_text": "14시",
+      "weather": "구름 많음",
+      "temperature": "16",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "15:00",
+      "time_text": "15시",
+      "weather": "맑음",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "16:00",
+      "time_text": "16시",
+      "weather": "구름 많음",
+      "temperature": "15",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "17:00",
+      "time_text": "17시",
+      "weather": "맑음",
+      "temperature": "14",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "18:00",
+      "time_text": "18시",
+      "weather": "맑음",
+      "temperature": "13",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "19:00",
+      "time_text": "19시",
+      "weather": "흐림",
+      "temperature": "12",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "20:00",
+      "time_text": "20시",
+      "weather": "구름 많음",
+      "temperature": "11",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "21:00",
+      "time_text": "21시",
+      "weather": "구름 많음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "22:00",
+      "time_text": "22시",
+      "weather": "구름 많음",
+      "temperature": "9",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "23:00",
+      "time_text": "23시",
+      "weather": "구름 많음",
+      "temperature": "9",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-09",
+      "time": "24:00",
+      "time_text": "0시",
+      "weather": "맑음",
+      "temperature": "8",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "01:00",
+      "time_text": "01시",
+      "weather": "맑음",
+      "temperature": "8",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "02:00",
+      "time_text": "02시",
+      "weather": "맑음",
+      "temperature": "9",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "03:00",
+      "time_text": "03시",
+      "weather": "맑음",
+      "temperature": "8",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "04:00",
+      "time_text": "04시",
+      "weather": "맑음",
+      "temperature": "7",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "05:00",
+      "time_text": "05시",
+      "weather": "맑음",
+      "temperature": "6",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "06:00",
+      "time_text": "06시",
+      "weather": "맑음",
+      "temperature": "6",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "07:00",
+      "time_text": "07시",
+      "weather": "맑음",
+      "temperature": "6",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "08:00",
+      "time_text": "08시",
+      "weather": "맑음",
+      "temperature": "6",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "09:00",
+      "time_text": "09시",
+      "weather": "맑음",
+      "temperature": "7",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "10:00",
+      "time_text": "10시",
+      "weather": "맑음",
+      "temperature": "8",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "11:00",
+      "time_text": "11시",
+      "weather": "맑음",
+      "temperature": "9",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "12:00",
+      "time_text": "12시",
+      "weather": "맑음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "13:00",
+      "time_text": "13시",
+      "weather": "맑음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "14:00",
+      "time_text": "14시",
+      "weather": "맑음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "15:00",
+      "time_text": "15시",
+      "weather": "맑음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "4m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "16:00",
+      "time_text": "16시",
+      "weather": "맑음",
+      "temperature": "10",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "3m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "17:00",
+      "time_text": "17시",
+      "weather": "맑음",
+      "temperature": "9",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "18:00",
+      "time_text": "18시",
+      "weather": "맑음",
+      "temperature": "8",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "19:00",
+      "time_text": "19시",
+      "weather": "맑음",
+      "temperature": "7",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "20:00",
+      "time_text": "20시",
+      "weather": "맑음",
+      "temperature": "7",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "21:00",
+      "time_text": "21시",
+      "weather": "맑음",
+      "temperature": "6",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "22:00",
+      "time_text": "22시",
+      "weather": "맑음",
+      "temperature": "5",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "2m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "23:00",
+      "time_text": "23시",
+      "weather": "구름 많음",
+      "temperature": "5",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북서풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    },
+    {
+      "date": "2025-11-10",
+      "time": "24:00",
+      "time_text": "0시",
+      "weather": "흐림",
+      "temperature": "5",
+      "feel_temperature": "체감온도:",
+      "precipitation": "강수량:",
+      "precipitation_intensity": "-",
+      "precipitation_probability": "강수확률:",
+      "wind": {
+        "direction": "북풍",
+        "speed": "1m/s"
+      },
+      "humidity": "습도:"
+    }
+  ]
+}

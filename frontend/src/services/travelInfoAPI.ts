@@ -18,14 +18,23 @@ export interface WeatherDaily {
   weather_daily_idx: number;
   country_code?: number;
   country_name?: string;
-  city_code?: number;
+  province_idx?: number;
+  province_name?: string;
+  city_idx?: number;
   city_name?: string;
+  district_idx?: number;
+  district_name?: string;
   forecast_date: string;
-  weather?: string;
+  weather_am?: string;
+  weather_pm?: string;
   temp_min_c?: number;
   temp_max_c?: number;
+  precipitation_am?: number;
+  precipitation_pm?: number;
+  weather?: string;
   rainfall_mm?: number;
   created_at: string;
+  updated_at?: string;
 }
 
 // Travel Alert API
@@ -64,6 +73,24 @@ const travelInfoAPI = {
     const response = await api.get('/api/weather/daily/by-date-range/', {
       params: { city_code: cityCode, start_date: startDate, end_date: endDate },
     });
+    return response.data;
+  },
+
+  getWeatherByLocation: async (
+    provinceIdx?: number,
+    cityIdx?: number,
+    districtIdx?: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<WeatherDaily[]> => {
+    const params: Record<string, any> = {};
+    if (provinceIdx) params.province_idx = provinceIdx;
+    if (cityIdx) params.city_idx = cityIdx;
+    if (districtIdx) params.district_idx = districtIdx;
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+
+    const response = await api.get('/api/weather/daily/by-location/', { params });
     return response.data;
   },
 

@@ -40,6 +40,7 @@ pandas==2.1.4
 # API & HTTP
 requests==2.31.0
 httpx==0.26.0
+beautifulsoup4==4.12.3
 
 # File Processing
 Pillow==10.2.0

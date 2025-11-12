@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Place, Photo, PlaceCategory
-from apps.common.models import Country, Region1, Region2
+from apps.common.models import Country, Province, City, District
 
 
 class CountrySerializer(serializers.ModelSerializer):
@@ -9,16 +9,22 @@ class CountrySerializer(serializers.ModelSerializer):
         fields = ['country_idx', 'country_name', 'iso2']
 
 
-class Region1Serializer(serializers.ModelSerializer):
+class ProvinceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Region1
-        fields = ['region1_idx', 'city_name']
+        model = Province
+        fields = ['province_idx', 'name', 'code']
 
 
-class Region2Serializer(serializers.ModelSerializer):
+class CitySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Region2
-        fields = ['region2_idx', 'region2_name']
+        model = City
+        fields = ['city_idx', 'name', 'code']
+
+
+class DistrictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ['district_idx', 'name', 'code']
 
 
 class PhotoSerializer(serializers.ModelSerializer):
@@ -31,14 +37,15 @@ class PhotoSerializer(serializers.ModelSerializer):
 class PlaceListSerializer(serializers.ModelSerializer):
     """Simplified serializer for list views"""
     country = serializers.CharField(source='country_idx.country_name', read_only=True)
-    region1 = serializers.CharField(source='region1_idx.city_name', read_only=True)
-    region2 = serializers.CharField(source='region2_idx.region2_name', read_only=True)
+    province = serializers.CharField(source='province_idx.name', read_only=True)
+    city = serializers.CharField(source='city_idx.name', read_only=True)
+    district = serializers.CharField(source='district_idx.name', read_only=True)
 
     class Meta:
         model = Place
         fields = [
             'place_idx', 'place_id', 'name', 'ko_name',
-            'country', 'region1', 'region2',
+            'country', 'province', 'city', 'district',
             'address', 'latitude', 'longitude',
             'rating', 'user_ratings_total', 'types'
         ]
@@ -47,15 +54,16 @@ class PlaceListSerializer(serializers.ModelSerializer):
 class PlaceDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer with all information"""
     country = CountrySerializer(source='country_idx', read_only=True)
-    region1 = Region1Serializer(source='region1_idx', read_only=True)
-    region2 = Region2Serializer(source='region2_idx', read_only=True)
+    province = ProvinceSerializer(source='province_idx', read_only=True)
+    city = CitySerializer(source='city_idx', read_only=True)
+    district = DistrictSerializer(source='district_idx', read_only=True)
     photos = PhotoSerializer(many=True, read_only=True)
 
     class Meta:
         model = Place
         fields = [
             'place_idx', 'place_id', 'name', 'ko_name',
-            'country', 'region1', 'region2',
+            'country', 'province', 'city', 'district',
             'types', 'address', 'latitude', 'longitude',
             'google_maps_uri', 'website_uri', 'phone',
             'rating', 'user_ratings_total',

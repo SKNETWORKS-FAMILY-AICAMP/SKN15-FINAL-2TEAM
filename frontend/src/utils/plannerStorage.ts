@@ -22,7 +22,7 @@ interface PlannerSessionData {
 
   // 위치 정보
   selectedCountry: number | null;
-  selectedRegion1: number | null;
+  selectedProvince: number | null;
 
   // 현재 상태
   activeStep: number;
@@ -46,7 +46,7 @@ export const savePlannerSession = (
     travelers: string;
     selectedDestination: string;
     selectedCountry?: number | null;
-    selectedRegion1?: number | null;
+    selectedProvince?: number | null;
     activeStep?: number;
     viewMode?: 'card' | 'timeline';
     selectedDay?: number | null;
@@ -62,7 +62,7 @@ export const savePlannerSession = (
       travelers: data.travelers,
       selectedDestination: data.selectedDestination,
       selectedCountry: data.selectedCountry ?? null,
-      selectedRegion1: data.selectedRegion1 ?? null,
+      selectedProvince: data.selectedProvince ?? null,
       activeStep: data.activeStep ?? 1,
       viewMode: data.viewMode ?? 'timeline',
       selectedDay: data.selectedDay ?? null,
@@ -158,7 +158,7 @@ export const getPlannerSummaryForAgent = (tripId: number | null): string | null 
         end_date: sessionData.endDate,
         travelers: sessionData.travelers,
         country_idx: sessionData.selectedCountry,
-        region1_idx: sessionData.selectedRegion1,
+        province_idx: sessionData.selectedProvince,
       },
       current_state: {
         active_step: sessionData.activeStep,

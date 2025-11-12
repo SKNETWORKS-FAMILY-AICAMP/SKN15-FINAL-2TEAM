@@ -1,5 +1,5 @@
 from django.db import models
-from apps.common.models import Country, Region1
+from apps.common.models import Country, Province
 
 
 class WorldTime(models.Model):
@@ -18,13 +18,12 @@ class WorldTime(models.Model):
         to_field='country_code',
         related_name='world_times'
     )
-    city_code = models.ForeignKey(
-        Region1,
+    province_idx = models.ForeignKey(
+        Province,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='city_code',
-        to_field='city_code',
+        db_column='province_idx',
         related_name='world_times'
     )
     continent = models.CharField(max_length=50)

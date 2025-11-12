@@ -109,7 +109,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
       const results: Location[] = response.results.map((place: Place) => ({
         name: place.name,
         description: place.address,
-        city: place.region1,
+        city: place.province,
         rating: place.rating ? parseFloat(place.rating) : undefined,
         reviews: place.user_ratings_total,
         placeData: place,
@@ -154,7 +154,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         results = places.map((place: Place) => ({
           name: place.name,
           description: place.address,
-          city: place.region1,
+          city: place.province,
           rating: place.rating ? parseFloat(place.rating) : undefined,
           reviews: place.user_ratings_total,
           placeData: place, // Store original place data

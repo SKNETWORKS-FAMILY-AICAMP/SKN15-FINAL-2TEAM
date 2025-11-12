@@ -1,0 +1,240 @@
+[
+  {
+    "code": "11",
+    "name": "서울특별시",
+    "name_en": "Seoul",
+    "type": "특별시",
+    "lat": 37.5665,
+    "lon": 126.978,
+    "region": "수도권",
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "26",
+    "name": "부산광역시",
+    "name_en": "Busan",
+    "type": "광역시",
+    "lat": 35.1796,
+    "lon": 129.0756,
+    "region": "영남권",
+    "weather_grid": {
+      "x": 98,
+      "y": 76,
+      "code": "098076"
+    }
+  },
+  {
+    "code": "27",
+    "name": "대구광역시",
+    "name_en": "Daegu",
+    "type": "광역시",
+    "lat": 35.8714,
+    "lon": 128.6014,
+    "region": "영남권",
+    "weather_grid": {
+      "x": 89,
+      "y": 91,
+      "code": "089091"
+    }
+  },
+  {
+    "code": "28",
+    "name": "인천광역시",
+    "name_en": "Incheon",
+    "type": "광역시",
+    "lat": 37.4563,
+    "lon": 126.7052,
+    "region": "수도권",
+    "weather_grid": {
+      "x": 55,
+      "y": 124,
+      "code": "055124"
+    }
+  },
+  {
+    "code": "29",
+    "name": "광주광역시",
+    "name_en": "Gwangju",
+    "type": "광역시",
+    "lat": 35.1595,
+    "lon": 126.8526,
+    "region": "호남권",
+    "weather_grid": {
+      "x": 58,
+      "y": 74,
+      "code": "058074"
+    }
+  },
+  {
+    "code": "30",
+    "name": "대전광역시",
+    "name_en": "Daejeon",
+    "type": "광역시",
+    "lat": 36.3504,
+    "lon": 127.3845,
+    "region": "충청권",
+    "weather_grid": {
+      "x": 67,
+      "y": 100,
+      "code": "067100"
+    }
+  },
+  {
+    "code": "31",
+    "name": "울산광역시",
+    "name_en": "Ulsan",
+    "type": "광역시",
+    "lat": 35.5384,
+    "lon": 129.3114,
+    "region": "영남권",
+    "weather_grid": {
+      "x": 102,
+      "y": 84,
+      "code": "102084"
+    }
+  },
+  {
+    "code": "36",
+    "name": "세종특별자치시",
+    "name_en": "Sejong",
+    "type": "특별자치시",
+    "lat": 36.48,
+    "lon": 127.289,
+    "region": "충청권",
+    "weather_grid": {
+      "x": 66,
+      "y": 103,
+      "code": "066103"
+    }
+  },
+  {
+    "code": "41",
+    "name": "경기도",
+    "name_en": "Gyeonggi-do",
+    "type": "도",
+    "lat": 37.4138,
+    "lon": 127.5183,
+    "region": "수도권",
+    "weather_grid": {
+      "x": 69,
+      "y": 124,
+      "code": "069124"
+    }
+  },
+  {
+    "code": "42",
+    "name": "강원특별자치도",
+    "name_en": "Gangwon-do",
+    "type": "특별자치도",
+    "lat": 37.8228,
+    "lon": 128.1555,
+    "region": "강원권",
+    "weather_grid": {
+      "x": 80,
+      "y": 133,
+      "code": "080133"
+    }
+  },
+  {
+    "code": "43",
+    "name": "충청북도",
+    "name_en": "Chungcheongbuk-do",
+    "type": "도",
+    "lat": 36.8,
+    "lon": 127.7,
+    "region": "충청권",
+    "weather_grid": {
+      "x": 73,
+      "y": 110,
+      "code": "073110"
+    }
+  },
+  {
+    "code": "44",
+    "name": "충청남도",
+    "name_en": "Chungcheongnam-do",
+    "type": "도",
+    "lat": 36.5184,
+    "lon": 126.8,
+    "region": "충청권",
+    "weather_grid": {
+      "x": 57,
+      "y": 104,
+      "code": "057104"
+    }
+  },
+  {
+    "code": "45",
+    "name": "전북특별자치도",
+    "name_en": "Jeonbuk-do",
+    "type": "특별자치도",
+    "lat": 35.7175,
+    "lon": 127.153,
+    "region": "호남권",
+    "weather_grid": {
+      "x": 63,
+      "y": 87,
+      "code": "063087"
+    }
+  },
+  {
+    "code": "46",
+    "name": "전라남도",
+    "name_en": "Jeonnam-do",
+    "type": "도",
+    "lat": 34.8679,
+    "lon": 126.991,
+    "region": "호남권",
+    "weather_grid": {
+      "x": 61,
+      "y": 68,
+      "code": "061068"
+    }
+  },
+  {
+    "code": "47",
+    "name": "경상북도",
+    "name_en": "Gyeongsangbuk-do",
+    "type": "도",
+    "lat": 36.4919,
+    "lon": 128.8889,
+    "region": "영남권",
+    "weather_grid": {
+      "x": 93,
+      "y": 104,
+      "code": "093104"
+    }
+  },
+  {
+    "code": "48",
+    "name": "경상남도",
+    "name_en": "Gyeongsangnam-do",
+    "type": "도",
+    "lat": 35.4606,
+    "lon": 128.2132,
+    "region": "영남권",
+    "weather_grid": {
+      "x": 82,
+      "y": 81,
+      "code": "082081"
+    }
+  },
+  {
+    "code": "50",
+    "name": "제주특별자치도",
+    "name_en": "Jeju-do",
+    "type": "특별자치도",
+    "lat": 33.4996,
+    "lon": 126.5312,
+    "region": "제주권",
+    "weather_grid": {
+      "x": 53,
+      "y": 38,
+      "code": "053038"
+    }
+  }
+]

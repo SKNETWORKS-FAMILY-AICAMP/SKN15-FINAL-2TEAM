@@ -1,0 +1,20 @@
+{
+  "total_provinces": 2,
+  "total_cities": 253,
+  "total_districts": 3562,
+  "crawled_at": "2025-11-09 00:30:46",
+  "provinces": [
+    {
+      "code": "510000000000",
+      "name": "강원특별자치도",
+      "cities_count": 18,
+      "districts_count": 193
+    },
+    {
+      "code": "410000000000",
+      "name": "경기도",
+      "cities_count": 44,
+      "districts_count": 601
+    }
+  ]
+}

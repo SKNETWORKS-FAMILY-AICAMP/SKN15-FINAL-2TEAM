@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  TextField,
 } from '@mui/material';
 import { useRouter } from 'next/router';
 import Calendar from '../src/components/planner/Calendar';
@@ -32,7 +33,8 @@ import {
 } from '../src/types/planner';
 import { destinationData } from '../src/data/mockData';
 import tripAPI, { TripPlan } from '../src/services/tripAPI';
-import commonAPI, { Region1 } from '../src/services/commonAPI';
+import commonAPI, { Province } from '../src/services/commonAPI';
+import weatherAPI, { WeatherDaily } from '../src/services/weatherAPI';
 import { useAuth } from '../src/hooks/useAuth';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import SaveIcon from '@mui/icons-material/Save';
@@ -70,12 +72,18 @@ export default function Planner() {
   const [editingItem, setEditingItem] = useState<ScheduleItem | undefined>(undefined);
   const [selectedDestination, setSelectedDestination] = useState<string>('도쿄');
 
+  // 독립적인 여행 제목 관리
+  const [tripTitle, setTripTitle] = useState<string>('나의 여행');
+
   // Location selection
   const [selectedCountry, setSelectedCountry] = useState<number | null>(null);
-  const [selectedRegion1, setSelectedRegion1] = useState<number | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
+  const [selectedCity, setSelectedCity] = useState<number | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<number | null>(null);
   const [countries, setCountries] = useState<any[]>([]);
-  const [region1List, setRegion1List] = useState<any[]>([]);
-  const [cities, setCities] = useState<Region1[]>([]);
+  const [provinceList, setProvinceList] = useState<any[]>([]);
+  const [cityList, setCityList] = useState<any[]>([]);
+  const [districtList, setDistrictList] = useState<any[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
 
   // Real trip data
@@ -103,6 +111,10 @@ export default function Planner() {
   // 사용자 만족도
   const [userSatisfaction, setUserSatisfaction] = useState<'like' | 'dislike' | null>(null);
   const [satisfactionSubmitted, setSatisfactionSubmitted] = useState(false);
+
+  // 날씨 데이터
+  const [weatherData, setWeatherData] = useState<WeatherDaily[]>([]);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
   // 챗봇 메시지에서 장소 추천을 파싱하는 함수 (상세 정보 포함)
   const parseRecommendedPlaces = (message: string): { places: string[], details: any[] } => {
@@ -261,16 +273,14 @@ export default function Planner() {
         setCountries(countriesData);
         console.log('🌍 Loaded countries:', countriesData.length);
 
-        // Load all cities for now (can be filtered by country later)
-        const citiesData = await commonAPI.getCities();
-        setCities(citiesData);
-        setRegion1List(citiesData);
-        console.log('📍 Loaded cities from database:', citiesData.length);
+        // Load all provinces (시/도)
+        const provincesData = await commonAPI.getProvinces();
+        setProvinceList(provincesData);
+        console.log('📍 Loaded provinces from database:', provincesData.length);
       } catch (error) {
         console.error('Failed to load location data:', error);
         setCountries([]);
-        setCities([]);
-        setRegion1List([]);
+        setProvinceList([]);
       } finally {
         setIsLoadingCities(false);
       }
@@ -279,27 +289,63 @@ export default function Planner() {
     loadLocationData();
   }, []);
 
-  // Filter Region1 when country changes
+  // Filter Province when country changes
   useEffect(() => {
-    const filterRegion1 = async () => {
+    const filterProvince = async () => {
       if (selectedCountry) {
         try {
-          const filtered = await commonAPI.getCitiesByCountry(selectedCountry);
-          setRegion1List(filtered);
-          console.log(`🏙️ Filtered cities for country ${selectedCountry}:`, filtered.length);
+          const filtered = await commonAPI.getProvincesByCountry(selectedCountry);
+          setProvinceList(filtered);
+          console.log(`🏙️ Filtered provinces for country ${selectedCountry}:`, filtered.length);
         } catch (error) {
-          console.error('Failed to filter cities:', error);
-          setRegion1List([]);
+          console.error('Failed to filter provinces:', error);
+          setProvinceList([]);
         }
-      } else {
-        // If no country selected, show all
-        setRegion1List(cities);
       }
     };
 
-    filterRegion1();
-  }, [selectedCountry, cities]);
+    filterProvince();
+  }, [selectedCountry]);
 
+  // Load cities when province changes
+  useEffect(() => {
+    const loadCities = async () => {
+      if (selectedProvince) {
+        try {
+          const citiesData = await commonAPI.getCitiesByProvince(selectedProvince);
+          setCityList(citiesData);
+          console.log(`🏘️ Loaded ${citiesData.length} cities for province ${selectedProvince}`);
+        } catch (error) {
+          console.error('Failed to load cities:', error);
+          setCityList([]);
+        }
+      } else {
+        setCityList([]);
+        setSelectedCity(null);
+      }
+    };
+    loadCities();
+  }, [selectedProvince]);
+
+  // Load districts when city changes
+  useEffect(() => {
+    const loadDistricts = async () => {
+      if (selectedCity) {
+        try {
+          const districtsData = await commonAPI.getDistrictsByCity(selectedCity);
+          setDistrictList(districtsData);
+          console.log(`🏡 Loaded ${districtsData.length} districts for city ${selectedCity}`);
+        } catch (error) {
+          console.error('Failed to load districts:', error);
+          setDistrictList([]);
+        }
+      } else {
+        setDistrictList([]);
+        setSelectedDistrict(null);
+      }
+    };
+    loadDistricts();
+  }, [selectedCity]);
 
   // Load trip from URL using invite code only
   useEffect(() => {
@@ -334,14 +380,15 @@ export default function Planner() {
           setStartDate(parseDateFromDB(trip.start_date));
           setEndDate(parseDateFromDB(trip.end_date));
           setTravelers(trip.party_size?.toString() || '');
-          setSelectedDestination(trip.title || '도쿄');
+          setTripTitle(trip.title || '나의 여행');
+          setSelectedDestination(trip.province_name || '도쿄');
 
           // Restore destination info
           if (trip.country_idx) {
             setSelectedCountry(trip.country_idx);
           }
-          if (trip.region1_idx) {
-            setSelectedRegion1(trip.region1_idx);
+          if (trip.province_idx) {
+            setSelectedProvince(trip.province_idx);
           }
 
           // Load user satisfaction
@@ -392,14 +439,15 @@ export default function Planner() {
               setStartDate(parseDateFromDB(trip.start_date));
               setEndDate(parseDateFromDB(trip.end_date));
               setTravelers(trip.party_size?.toString() || '');
-              setSelectedDestination(trip.title || '도쿄');
+              setTripTitle(trip.title || '나의 여행');
+              setSelectedDestination(trip.province_name || '도쿄');
 
               // Restore destination info
               if (trip.country_idx) {
                 setSelectedCountry(trip.country_idx);
               }
-              if (trip.region1_idx) {
-                setSelectedRegion1(trip.region1_idx);
+              if (trip.province_idx) {
+                setSelectedProvince(trip.province_idx);
               }
 
               // Load user satisfaction
@@ -489,13 +537,16 @@ export default function Planner() {
         setTravelers(trip.party_size.toString());
       }
       if (trip.title) {
-        setSelectedDestination(trip.title);
+        setTripTitle(trip.title);
+      }
+      if (trip.province_name) {
+        setSelectedDestination(trip.province_name);
       }
       if (trip.country_idx) {
         setSelectedCountry(trip.country_idx);
       }
-      if (trip.region1_idx) {
-        setSelectedRegion1(trip.region1_idx);
+      if (trip.province_idx) {
+        setSelectedProvince(trip.province_idx);
       }
 
       const daysData = await tripAPI.getDays(tripId);
@@ -672,7 +723,62 @@ export default function Planner() {
 
   const handleNextStep = () => {
     if (activeStep < 4) setActiveStep(activeStep + 1);
+
+    // 미리보기 단계로 이동 시 날씨 데이터 가져오기
+    if (activeStep === 3 && tripId) {
+      fetchWeatherDataByDays();
+    }
   };
+
+  // 날씨 데이터 가져오기 (각 일차의 첫 번째 일정 위치 기준)
+  const fetchWeatherDataByDays = async () => {
+    if (!tripId) {
+      console.warn('⚠️ No trip ID, cannot fetch weather');
+      return;
+    }
+
+    setIsLoadingWeather(true);
+    try {
+      console.log('🌤️ Fetching weather by days for trip:', tripId);
+      const result = await tripAPI.getWeatherByDays(tripId);
+      console.log('✅ Weather data received:', result);
+
+      // 날짜를 키로 하는 날씨 데이터 맵으로 변환
+      const weatherMap: any[] = [];
+      result.days.forEach(day => {
+        console.log('🔍 Processing day:', day.day_no, 'date:', day.date, 'weather:', day.weather);
+        if (day.weather) {
+          weatherMap.push({
+            forecast_date: day.date,
+            weather_am: day.weather.weather_am,
+            weather_pm: day.weather.weather_pm,
+            temp_min_c: day.weather.temp_min_c,
+            temp_max_c: day.weather.temp_max_c,
+            precipitation_am: day.weather.precipitation_am,
+            precipitation_pm: day.weather.precipitation_pm,
+          });
+        } else {
+          console.warn('⚠️ No weather for day', day.day_no, day.date);
+        }
+      });
+
+      console.log('🌤️ Final weatherMap:', weatherMap);
+      setWeatherData(weatherMap);
+    } catch (error) {
+      console.error('❌ Failed to fetch weather:', error);
+      setWeatherData([]);
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
+
+  // Step 4(미리보기)로 들어올 때 자동으로 날씨 데이터 가져오기
+  useEffect(() => {
+    if (activeStep === 4 && tripId) {
+      console.log('📍 Step 4 (미리보기) - 날씨 데이터 가져오기');
+      fetchWeatherDataByDays();
+    }
+  }, [activeStep, tripId]);
 
   const handlePrevStep = () => {
     if (activeStep > 1) setActiveStep(activeStep - 1);
@@ -819,13 +925,13 @@ export default function Planner() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `여행계획_${selectedDestination}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `여행계획_${tripTitle}_${new Date().toISOString().split('T')[0]}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleSharePlan = () => {
-    const shareText = `나의 ${selectedDestination} 여행 계획! 총 ${getTotalDays()}일 일정입니다.`;
+    const shareText = `${tripTitle} 계획! 총 ${getTotalDays()}일 일정입니다.`;
 
     if (navigator.share) {
       navigator.share({
@@ -891,9 +997,11 @@ export default function Planner() {
         start_date: formatDateForDB(startDate),
         end_date: formatDateForDB(endDate),
         party_size: parseInt(travelers) || 1,
-        title: selectedDestination,
+        title: tripTitle,
         country_idx: selectedCountry || undefined,
-        region1_idx: selectedRegion1 || undefined,
+        province_idx: selectedProvince || undefined,
+        city_idx: selectedCity || undefined,
+        district_idx: selectedDistrict || undefined,
       });
 
       console.log('✅ Trip info updated:', updatedTrip);
@@ -1082,7 +1190,7 @@ export default function Planner() {
         travelers,
         selectedDestination,
         selectedCountry,
-        selectedRegion1,
+        selectedProvince,
         activeStep,
         viewMode,
         selectedDay,
@@ -1097,7 +1205,7 @@ export default function Planner() {
     travelers,
     selectedDestination,
     selectedCountry,
-    selectedRegion1,
+    selectedProvince,
     activeStep,
     viewMode,
     selectedDay,
@@ -1123,7 +1231,7 @@ export default function Planner() {
         setTravelers(sessionData.travelers);
         setSelectedDestination(sessionData.selectedDestination);
         setSelectedCountry(sessionData.selectedCountry);
-        setSelectedRegion1(sessionData.selectedRegion1);
+        setSelectedProvince(sessionData.selectedProvince);
         setActiveStep(sessionData.activeStep);
         setViewMode(sessionData.viewMode);
         setSelectedDay(sessionData.selectedDay || undefined);
@@ -1200,6 +1308,20 @@ export default function Planner() {
                 </Button>
               )}
             </Box>
+
+            {/* 여행 제목 입력 */}
+            <TextField
+              fullWidth
+              label="여행 제목"
+              value={tripTitle}
+              onChange={(e) => {
+                setTripTitle(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder="예: 서울 가족 여행, 제주도 힐링 여행"
+              sx={{ mb: 3 }}
+              helperText="여행의 제목을 자유롭게 입력하세요"
+            />
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
@@ -1292,7 +1414,7 @@ export default function Planner() {
                 onChange={(e: any) => {
                   const countryIdx = e.target.value;
                   setSelectedCountry(countryIdx);
-                  setSelectedRegion1(null); // Reset region1 when country changes
+                  setSelectedProvince(null); // Reset province when country changes
                   // Find country name
                   const country = countries.find((c: any) => c.country_idx === countryIdx);
                   setSelectedDestination(country?.country_name || '');
@@ -1316,29 +1438,34 @@ export default function Planner() {
               </Select>
             </FormControl>
 
-            {/* Region1 (City) Selection */}
+            {/* Province (City) Selection */}
             {selectedCountry && (
               <FormControl fullWidth sx={{ mb: 3 }}>
                 <InputLabel>도시 선택</InputLabel>
                 <Select
-                  value={selectedRegion1 || ''}
+                  value={selectedProvince || ''}
                   onChange={(e: any) => {
-                    const region1Idx = e.target.value;
-                    setSelectedRegion1(region1Idx);
-                    // Find city name
-                    const city = region1List.find((r: any) => r.region1_idx === region1Idx);
-                    if (city) {
-                      setSelectedDestination(`${city.city_name}`);
+                    const provinceIdx = e.target.value;
+                    setSelectedProvince(provinceIdx);
+                    // Reset child selections
+                    setSelectedCity(null);
+                    setSelectedDistrict(null);
+                    setCityList([]);
+                    setDistrictList([]);
+                    // Find province name
+                    const province = provinceList.find((r: any) => r.province_idx === provinceIdx);
+                    if (province) {
+                      setSelectedDestination(`${province.name}`);
                     }
                     // Mark as dirty to enable save button
                     setIsDirty(true);
                   }}
                   label="도시 선택"
                 >
-                  {region1List.length > 0 ? (
-                    region1List.map((city: any) => (
-                      <MenuItem key={city.region1_idx} value={city.region1_idx}>
-                        🏙️ {city.city_name}
+                  {provinceList.length > 0 ? (
+                    provinceList.map((province: any) => (
+                      <MenuItem key={province.province_idx} value={province.province_idx}>
+                        🏙️ {province.name}
                       </MenuItem>
                     ))
                   ) : (
@@ -1348,9 +1475,102 @@ export default function Planner() {
               </FormControl>
             )}
 
+            {/* City Selection (구/군) - Optional */}
+            {selectedProvince && cityList.length > 0 && (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>구/군 선택 (선택)</InputLabel>
+                <Select
+                  value={selectedCity || ''}
+                  onChange={(e: any) => {
+                    const cityIdx = e.target.value;
+                    setSelectedCity(cityIdx || null);
+                    // Reset district selection
+                    setSelectedDistrict(null);
+                    setDistrictList([]);
+                    // Find city name and update destination
+                    const province = provinceList.find((p: any) => p.province_idx === selectedProvince);
+                    if (cityIdx) {
+                      const city = cityList.find((c: any) => c.city_idx === cityIdx);
+                      if (city && province) {
+                        setSelectedDestination(`${province.name} ${city.name}`);
+                      }
+                    } else {
+                      // No city selected, just show province
+                      if (province) {
+                        setSelectedDestination(province.name);
+                      }
+                    }
+                    // Mark as dirty to enable save button
+                    setIsDirty(true);
+                  }}
+                  label="구/군 선택 (선택)"
+                >
+                  <MenuItem value="">선택</MenuItem>
+                  {cityList.map((city: any) => (
+                    <MenuItem key={city.city_idx} value={city.city_idx}>
+                      🏘️ {city.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* District Selection (읍/면/동) - Optional */}
+            {selectedCity && districtList.length > 0 && (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>읍/면/동 선택 (선택)</InputLabel>
+                <Select
+                  value={selectedDistrict || ''}
+                  onChange={(e: any) => {
+                    const districtIdx = e.target.value;
+                    setSelectedDistrict(districtIdx || null);
+                    // Find district name and update destination
+                    const city = cityList.find((c: any) => c.city_idx === selectedCity);
+                    const province = provinceList.find((p: any) => p.province_idx === selectedProvince);
+                    if (districtIdx) {
+                      const district = districtList.find((d: any) => d.district_idx === districtIdx);
+                      if (district && city && province) {
+                        setSelectedDestination(`${province.name} ${city.name} ${district.name}`);
+                      }
+                    } else {
+                      // No district selected, just show province and city
+                      if (city && province) {
+                        setSelectedDestination(`${province.name} ${city.name}`);
+                      }
+                    }
+                    // Mark as dirty to enable save button
+                    setIsDirty(true);
+                  }}
+                  label="읍/면/동 선택 (선택)"
+                >
+                  <MenuItem value="">선택</MenuItem>
+                  {districtList.map((district: any) => (
+                    <MenuItem key={district.district_idx} value={district.district_idx}>
+                      📍 {district.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
             {/* 여행지 정보 - 항상 표시 (데이터가 없으면 빈 틀로 표시) */}
             {selectedCountry && (
               <>
+                {/* Weather Forecast - 날씨 예보 (기본정보 위로 이동) */}
+                {selectedProvince && startDate && endDate && (
+                  <Box sx={{ mb: 4 }}>
+                    <TravelInfoCard
+                      countryCode={selectedCountry || undefined}
+                      provinceIdx={selectedProvince || undefined}
+                      cityIdx={selectedCity || undefined}
+                      districtIdx={selectedDistrict || undefined}
+                      startDate={startDate}
+                      endDate={endDate}
+                      weatherOnly={true}
+                    />
+                  </Box>
+                )}
+
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                     📍 기본 정보
@@ -1450,12 +1670,15 @@ export default function Planner() {
                   </Box>
                 )}
 
-                {/* Airflow 배치 데이터: 날씨, 환율, 여행경보 */}
+                {/* Airflow 배치 데이터: 환율, 여행경보 (날씨는 위로 이동) */}
                 <TravelInfoCard
                   countryCode={selectedCountry || undefined}
-                  cityCode={selectedRegion1 || undefined}
+                  provinceIdx={selectedProvince || undefined}
+                  cityIdx={selectedCity || undefined}
+                  districtIdx={selectedDistrict || undefined}
                   startDate={startDate}
                   endDate={endDate}
+                  weatherOnly={false}
                 />
               </>
             )}
@@ -1616,6 +1839,55 @@ export default function Planner() {
                   setIsDirty(true);
                   console.log(`✅ Time updated successfully (timeline)`);
                 }}
+                onReorder={(dayNum, oldIndex, newIndex) => {
+                  console.log(`🔄 Reordering Day ${dayNum}: ${oldIndex} → ${newIndex}`);
+
+                  setTripData((prev: TripData) => {
+                    // Deep copy
+                    const newData: TripData = {};
+                    Object.keys(prev).forEach(key => {
+                      const dayNo = Number(key);
+                      newData[dayNo] = [...prev[dayNo]];
+                    });
+
+                    // Reorder items
+                    if (newData[dayNum]) {
+                      const [movedItem] = newData[dayNum].splice(oldIndex, 1);
+                      newData[dayNum].splice(newIndex, 0, movedItem);
+                    }
+
+                    return newData;
+                  });
+
+                  setIsDirty(true);
+                  console.log(`✅ Reordered successfully`);
+                }}
+                onMoveToDay={(sourceDayNo, sourceIndex, targetDayNo) => {
+                  console.log(`📦 Moving item from Day ${sourceDayNo}[${sourceIndex}] to Day ${targetDayNo}`);
+
+                  setTripData((prev: TripData) => {
+                    // Deep copy
+                    const newData: TripData = {};
+                    Object.keys(prev).forEach(key => {
+                      const dayNo = Number(key);
+                      newData[dayNo] = [...prev[dayNo]];
+                    });
+
+                    // Move item
+                    if (newData[sourceDayNo] && newData[targetDayNo]) {
+                      const [movedItem] = newData[sourceDayNo].splice(sourceIndex, 1);
+                      newData[targetDayNo].push(movedItem);
+
+                      // Sort target day by time
+                      newData[targetDayNo].sort((a, b) => a.time.localeCompare(b.time));
+                    }
+
+                    return newData;
+                  });
+
+                  setIsDirty(true);
+                  console.log(`✅ Moved to Day ${targetDayNo} successfully`);
+                }}
               />
             )}
 
@@ -1669,7 +1941,7 @@ export default function Planner() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {selectedDestination} 여행
+                    {tripTitle}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     {startDate?.toLocaleDateString()} ~ {endDate?.toLocaleDateString()}
@@ -1733,19 +2005,72 @@ export default function Planner() {
                     여행 지역
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {currentTrip?.region1_name || region1List.find(r => r.region1_idx === selectedRegion1)?.region1_name || '-'}
+                    {currentTrip?.province_name || provinceList.find(r => r.province_idx === selectedProvince)?.name || '-'}
                   </Typography>
                 </Box>
               </Box>
             </Box>
 
             <Box sx={{ bgcolor: 'white', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-              {dayPlans.map((day: DayPlan) => (
+              {dayPlans.map((day: DayPlan) => {
+                // 해당 일차의 날씨 정보 찾기 (day.date는 "2025-11-17 (일)" 형식이므로 YYYY-MM-DD만 추출)
+                const dateOnly = day.date.split(' ')[0]; // "2025-11-17 (일)" → "2025-11-17"
+                const dayWeather = weatherData.find(w => w.forecast_date === dateOnly);
+                console.log(`🌤️ Day ${day.dayNumber} (${day.date} → ${dateOnly}): weatherData.length=${weatherData.length}, found=${!!dayWeather}`, dayWeather);
+
+                return (
                 <Box key={day.dayNumber} sx={{ borderBottom: '1px solid #e9ecef', '&:last-child': { borderBottom: 'none' } }}>
-                  <Box sx={{ p: 2.5, bgcolor: '#f8f9fa' }}>
+                  <Box sx={{ p: 2.5, bgcolor: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
                       Day {day.dayNumber} - {day.date}
                     </Typography>
+
+                    {/* 날씨 정보 */}
+                    {dayWeather && (
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'white', px: 2, py: 1, borderRadius: '8px' }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>
+                            오전
+                          </Typography>
+                          <Typography sx={{ fontSize: '1.2rem' }}>
+                            {dayWeather.weather_am || '☀️'}
+                          </Typography>
+                          {dayWeather.precipitation_am !== null && (
+                            <Typography variant="caption" sx={{ color: '#2196f3' }}>
+                              💧{dayWeather.precipitation_am}%
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>
+                            오후
+                          </Typography>
+                          <Typography sx={{ fontSize: '1.2rem' }}>
+                            {dayWeather.weather_pm || '☀️'}
+                          </Typography>
+                          {dayWeather.precipitation_pm !== null && (
+                            <Typography variant="caption" sx={{ color: '#2196f3' }}>
+                              💧{dayWeather.precipitation_pm}%
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ textAlign: 'center', ml: 1 }}>
+                          <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>
+                            기온
+                          </Typography>
+                          <Typography sx={{ fontWeight: 600, color: '#d32f2f' }}>
+                            {dayWeather.temp_max_c !== null ? `${dayWeather.temp_max_c}°` : '-'}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.75rem', color: '#1976d2' }}>
+                            {dayWeather.temp_min_c !== null ? `${dayWeather.temp_min_c}°` : '-'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {!dayWeather && isLoadingWeather && (
+                      <CircularProgress size={20} />
+                    )}
                   </Box>
                   <Box sx={{ p: 2.5 }}>
                     {day.schedules.length === 0 ? (
@@ -1775,7 +2100,8 @@ export default function Planner() {
                     )}
                   </Box>
                 </Box>
-              ))}
+                );
+              })}
             </Box>
 
             {/* 사용자 만족도 수집 */}
@@ -2229,14 +2555,14 @@ export default function Planner() {
             console.warn('⚠️ KakaoMapSearch ref not available');
           }
         }}
-        tripTitle={currentTrip?.title || `${selectedDestination} 여행`}
+        tripTitle={tripTitle}
       />
 
       <InviteCodeModal
         open={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
         tripId={tripId || 0}
-        tripTitle={currentTrip?.title || `${selectedDestination} 여행`}
+        tripTitle={tripTitle}
       />
 
       {/* Place Search Sidebar */}

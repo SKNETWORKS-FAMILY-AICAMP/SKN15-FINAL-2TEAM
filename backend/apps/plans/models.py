@@ -5,8 +5,11 @@ from datetime import timedelta
 import random
 import string
 from apps.accounts.models import User
-from apps.common.models import Country, Region1, Region2
+from apps.common.models import Country, Province, City, District
 from apps.places.models import Place
+
+# YouTube Crawler 모델 import
+from .models_youtube import YouTubeCrawlerJob
 
 
 class TripPlan(models.Model):
@@ -37,20 +40,28 @@ class TripPlan(models.Model):
         db_column='country_idx',
         related_name='trip_plans'
     )
-    region1_idx = models.ForeignKey(
-        Region1,
+    province_idx = models.ForeignKey(
+        Province,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region1_idx',
+        db_column='province_idx',
         related_name='trip_plans'
     )
-    region2_idx = models.ForeignKey(
-        Region2,
+    city_idx = models.ForeignKey(
+        City,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region2_idx',
+        db_column='city_idx',
+        related_name='trip_plans'
+    )
+    district_idx = models.ForeignKey(
+        District,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='district_idx',
         related_name='trip_plans'
     )
     start_date = models.DateField()

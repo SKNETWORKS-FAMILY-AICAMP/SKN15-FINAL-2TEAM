@@ -8,11 +8,12 @@ from rest_framework import status, viewsets
 from django.db import connection
 from django.conf import settings
 
-from .models import Country, Region1, Region2, PlacesCategory, CountryElectric
+from .models import Country, Province, City, District, PlacesCategory, CountryElectric
 from .serializers import (
     CountrySerializer,
-    Region1Serializer,
-    Region2Serializer,
+    ProvinceSerializer,
+    CitySerializer,
+    DistrictSerializer,
     PlacesCategorySerializer,
     CountryElectricSerializer
 )
@@ -58,20 +59,6 @@ class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
 
-class Region1ViewSet(viewsets.ReadOnlyModelViewSet):
-    """Region1 (City) ViewSet - Read only"""
-    queryset = Region1.objects.all()
-    serializer_class = Region1Serializer
-    permission_classes = [AllowAny]
-
-
-class Region2ViewSet(viewsets.ReadOnlyModelViewSet):
-    """Region2 (District) ViewSet - Read only"""
-    queryset = Region2.objects.all()
-    serializer_class = Region2Serializer
-    permission_classes = [AllowAny]
-
-
 class PlacesCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """Places Category ViewSet - Read only"""
     queryset = PlacesCategory.objects.all()
@@ -91,4 +78,49 @@ class CountryElectricViewSet(viewsets.ReadOnlyModelViewSet):
         country_name = self.request.query_params.get('country_name', None)
         if country_name:
             queryset = queryset.filter(country_name__icontains=country_name)
+        return queryset
+
+
+class ProvinceViewSet(viewsets.ReadOnlyModelViewSet):
+    """Province (시/도) ViewSet - Read only"""
+    queryset = Province.objects.all()
+    serializer_class = ProvinceSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filter by country if provided
+        country_id = self.request.query_params.get('country', None)
+        if country_id:
+            queryset = queryset.filter(country_id=country_id)
+        return queryset
+
+
+class CityViewSet(viewsets.ReadOnlyModelViewSet):
+    """City (시/군/구) ViewSet - Read only"""
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filter by province if provided
+        province_id = self.request.query_params.get('province', None)
+        if province_id:
+            queryset = queryset.filter(province_id=province_id)
+        return queryset
+
+
+class DistrictViewSet(viewsets.ReadOnlyModelViewSet):
+    """District (읍/면/동) ViewSet - Read only"""
+    queryset = District.objects.all()
+    serializer_class = DistrictSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filter by city if provided
+        city_id = self.request.query_params.get('city', None)
+        if city_id:
+            queryset = queryset.filter(city_id=city_id)
         return queryset

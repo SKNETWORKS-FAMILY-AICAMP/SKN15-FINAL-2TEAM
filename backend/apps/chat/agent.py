@@ -147,64 +147,77 @@ class TravelPlannerAgent:
             try:
                 day = TripDay.objects.get(trip_idx=trip_id, day_no=day_no)
 
-                # 🆕 1. 장소 검증 및 검색 (자동으로 DB + Kakao 검색)
+                # 🆕 1. 장소 검증 및 검색 (항상 카카오 API 사용, DB는 수집용)
                 verified_place = None
                 verified_name = place_name
                 place_info = {}
 
-                # 1-1. 내부 DB에서 먼저 검색
+                # 카카오맵에서 검색 (항상)
                 try:
-                    db_place = Place.objects.filter(
-                        Q(name__icontains=place_name) | Q(ko_name__icontains=place_name)
-                    ).first()
+                    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+                    headers = {"Authorization": f"KakaoAK {settings.KAKAO_REST_API_KEY}"}
+                    params = {"query": place_name, "size": 1}
 
-                    if db_place:
-                        verified_place = db_place
-                        verified_name = db_place.ko_name or db_place.name
+                    response = requests.get(url, headers=headers, params=params, timeout=5)
+                    data = response.json()
+
+                    if data.get('documents'):
+                        place_data = data['documents'][0]
+                        verified_name = place_data['place_name']
                         place_info = {
-                            'address': db_place.address,
-                            'latitude': float(db_place.latitude) if db_place.latitude else None,
-                            'longitude': float(db_place.longitude) if db_place.longitude else None,
-                            'rating': float(db_place.rating) if db_place.rating else None,
-                            'reviews': db_place.user_ratings_total,
-                            'phone': db_place.phone if hasattr(db_place, 'phone') else None,
+                            'address': place_data.get('road_address_name') or place_data.get('address_name'),
+                            'latitude': float(place_data.get('y', 0)) if place_data.get('y') else None,
+                            'longitude': float(place_data.get('x', 0)) if place_data.get('x') else None,
+                            'category': place_data.get('category_name', ''),
+                            'phone': place_data.get('phone', ''),
                         }
-                        logger.info(f"✅ Found place in DB: {verified_name} (ID: {db_place.place_idx})")
-                except Exception as db_error:
-                    logger.warning(f"⚠️ DB search failed: {db_error}")
+                        logger.info(f"✅ Found place in Kakao: {verified_name}")
 
-                # 1-2. DB에 없으면 카카오맵에서 검색
-                if not verified_place:
-                    try:
-                        url = "https://dapi.kakao.com/v2/local/search/keyword.json"
-                        headers = {"Authorization": f"KakaoAK {settings.KAKAO_REST_API_KEY}"}
-                        params = {"query": place_name, "size": 1}
+                        # 🆕 카카오에서 찾은 장소를 DB에 저장 (데이터 수집용)
+                        try:
+                            from apps.common.address_parser import parse_korean_address
 
-                        response = requests.get(url, headers=headers, params=params, timeout=5)
-                        data = response.json()
+                            # 추가 정보 추출
+                            road_address = place_data.get('road_address_name', '')
+                            address_name = place_data.get('address_name', '')
+                            category_group = place_data.get('category_group_name', '')
+                            place_url = place_data.get('place_url', '')
+                            full_address = road_address or address_name or place_info['address']
 
-                        if data.get('documents'):
-                            place_data = data['documents'][0]
-                            verified_name = place_data['place_name']
-                            place_info = {
-                                'address': place_data.get('road_address_name') or place_data.get('address_name'),
-                                'latitude': float(place_data.get('y', 0)) if place_data.get('y') else None,
-                                'longitude': float(place_data.get('x', 0)) if place_data.get('x') else None,
-                                'category': place_data.get('category_name', ''),
-                                'phone': place_data.get('phone', ''),
-                            }
-                            logger.info(f"✅ Found place in Kakao: {verified_name}")
-                        else:
-                            logger.warning(f"⚠️ '{place_name}' not found in Kakao - using as-is")
-                    except Exception as kakao_error:
-                        logger.warning(f"⚠️ Kakao search failed: {kakao_error}")
+                            # 주소에서 지역 정보 파싱
+                            parsed_location = parse_korean_address(full_address)
+
+                            verified_place, created = Place.objects.get_or_create(
+                                place_id=place_data.get('id'),
+                                defaults={
+                                    'name': place_data.get('place_name'),
+                                    'ko_name': place_data.get('place_name'),
+                                    'address': full_address,
+                                    'latitude': place_info['latitude'],
+                                    'longitude': place_info['longitude'],
+                                    'phone': place_info.get('phone'),
+                                    'types': f"{place_info.get('category', '')} | {category_group}".strip(' |'),
+                                    'website_uri': place_url,
+                                    # 파싱된 지역 정보 저장
+                                    'province_idx': parsed_location['province'],
+                                    'city_idx': parsed_location['city'],
+                                    'district_idx': parsed_location['district'],
+                                }
+                            )
+                            logger.info(f"💾 Place data collected: {verified_name} (주소: {full_address}, 구: {parsed_location['city']}, 동: {parsed_location['district']})")
+                        except Exception as save_error:
+                            logger.warning(f"⚠️ Failed to save place to DB: {save_error}")
+                    else:
+                        logger.warning(f"⚠️ '{place_name}' not found in Kakao - using as-is")
+                except Exception as kakao_error:
+                    logger.warning(f"⚠️ Kakao search failed: {kakao_error}")
 
                 # 🆕 2. 마지막 order 찾기
                 last_item = TripItem.objects.filter(day_idx=day.day_idx).order_by('-order_in_day').first()
                 order = (last_item.order_in_day + 1) if last_item else 1
 
-                # 🆕 3. TripItem 생성 (place_idx 연결 시도)
-                item_type = 'place' if verified_place else 'custom'
+                # 🆕 3. TripItem 생성 (place_idx 연결로 날씨 사용 가능)
+                item_type = 'place'
 
                 # notes에 장소 정보 추가 (기존 notes와 병합)
                 enhanced_notes = notes
@@ -218,12 +231,12 @@ class TravelPlannerAgent:
                 TripItem.objects.create(
                     day_idx=day,
                     item_type=item_type,
-                    place_idx=verified_place,  # ← FK 연결 (DB에서 찾은 경우)
-                    title=verified_name,        # ← 검증된 이름
+                    place_idx=verified_place if verified_place else None,  # ← Place 연결로 날씨 조회 가능
+                    title=verified_name,
                     start_time=time,
                     notes=enhanced_notes.strip(),
                     order_in_day=order,
-                    lock_flag=False
+                    lock_flag=False,
                 )
 
                 # 🆕 4. 상세 정보 포함한 응답 생성
@@ -994,6 +1007,36 @@ class TravelPlannerAgent:
                                 'phone': place_data.get('phone', ''),
                             }
                             logger.info(f"✅ Found in Kakao: {verified_name}")
+
+                            # 🆕 카카오에서 찾은 장소를 DB에 저장 (캐싱)
+                            try:
+                                from apps.common.address_parser import parse_korean_address
+
+                                # 주소에서 지역 정보 파싱
+                                parsed_location = parse_korean_address(place_info['address'])
+
+                                verified_place, created = Place.objects.get_or_create(
+                                    place_id=place_data.get('id'),
+                                    defaults={
+                                        'name': place_data.get('place_name'),
+                                        'ko_name': place_data.get('place_name'),
+                                        'address': place_info['address'],
+                                        'latitude': place_info['latitude'],
+                                        'longitude': place_info['longitude'],
+                                        'phone': place_info.get('phone'),
+                                        'types': place_info.get('category'),
+                                        # 파싱된 지역 정보 저장
+                                        'province_idx': parsed_location['province'],
+                                        'city_idx': parsed_location['city'],
+                                        'district_idx': parsed_location['district'],
+                                    }
+                                )
+                                if created:
+                                    logger.info(f"💾 Saved new place to DB: {verified_name} (구: {parsed_location['city']}, 동: {parsed_location['district']})")
+                                else:
+                                    logger.info(f"♻️ Place already in DB: {verified_name} (ID: {verified_place.place_idx})")
+                            except Exception as save_error:
+                                logger.warning(f"⚠️ Failed to save place to DB: {save_error}")
                         else:
                             logger.warning(f"⚠️ '{place_name}' not found - using as-is")
                     except Exception as kakao_error:

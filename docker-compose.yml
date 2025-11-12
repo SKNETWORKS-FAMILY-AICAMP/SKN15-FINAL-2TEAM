@@ -6,9 +6,9 @@ services:
     image: ankane/pgvector:latest
     container_name: triplan-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-triplan}
+      POSTGRES_DB: ${POSTGRES_DB:-lecun2}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lecun123!@#}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -27,7 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: triplan-redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --replicaof ""
     volumes:
       - ./data/redis:/data
     ports:
@@ -49,6 +49,7 @@ services:
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
+             bash load_initial_regions.sh &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 300 --graceful-timeout 300"
     environment:
       - DEBUG=${DEBUG:-True}
@@ -56,7 +57,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-lecun2}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
-      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-lecun123!@#}@postgres:5432/${POSTGRES_DB:-lecun2}
       - REDIS_URL=redis://redis:6379/0
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - KAKAO_API_KEY=${KAKAO_API_KEY:-}
@@ -90,7 +91,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-lecun2}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lecun123!@#}
-      - DATABASE_URL=postgresql://postgres:lecun123%21%40%23@postgres:5432/lecun2
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-lecun123!@#}@postgres:5432/${POSTGRES_DB:-lecun2}
       - REDIS_URL=redis://redis:6379/0
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - KAKAO_API_KEY=${KAKAO_API_KEY:-}

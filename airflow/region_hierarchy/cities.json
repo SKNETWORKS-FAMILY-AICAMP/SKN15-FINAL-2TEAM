@@ -1,0 +1,1157 @@
+[
+  {
+    "code": "11110",
+    "province_code": "11",
+    "name": "종로구",
+    "name_en": "Jongno-gu",
+    "full_name": "서울특별시 종로구",
+    "type": "구",
+    "lat": 37.5735,
+    "lon": 126.9788,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "11140",
+    "province_code": "11",
+    "name": "중구",
+    "name_en": "Jung-gu",
+    "full_name": "서울특별시 중구",
+    "type": "구",
+    "lat": 37.5641,
+    "lon": 126.9979,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "11170",
+    "province_code": "11",
+    "name": "용산구",
+    "name_en": "Yongsan-gu",
+    "full_name": "서울특별시 용산구",
+    "type": "구",
+    "lat": 37.5326,
+    "lon": 126.9905,
+    "weather_grid": {
+      "x": 60,
+      "y": 126,
+      "code": "060126"
+    }
+  },
+  {
+    "code": "11200",
+    "province_code": "11",
+    "name": "성동구",
+    "name_en": "Seongdong-gu",
+    "full_name": "서울특별시 성동구",
+    "type": "구",
+    "lat": 37.5634,
+    "lon": 127.0369,
+    "weather_grid": {
+      "x": 61,
+      "y": 127,
+      "code": "061127"
+    }
+  },
+  {
+    "code": "11215",
+    "province_code": "11",
+    "name": "광진구",
+    "name_en": "Gwangjin-gu",
+    "full_name": "서울특별시 광진구",
+    "type": "구",
+    "lat": 37.5384,
+    "lon": 127.0823,
+    "weather_grid": {
+      "x": 62,
+      "y": 126,
+      "code": "062126"
+    }
+  },
+  {
+    "code": "11230",
+    "province_code": "11",
+    "name": "동대문구",
+    "name_en": "Dongdaemun-gu",
+    "full_name": "서울특별시 동대문구",
+    "type": "구",
+    "lat": 37.5744,
+    "lon": 127.0399,
+    "weather_grid": {
+      "x": 61,
+      "y": 127,
+      "code": "061127"
+    }
+  },
+  {
+    "code": "11260",
+    "province_code": "11",
+    "name": "중랑구",
+    "name_en": "Jungnang-gu",
+    "full_name": "서울특별시 중랑구",
+    "type": "구",
+    "lat": 37.6063,
+    "lon": 127.0926,
+    "weather_grid": {
+      "x": 62,
+      "y": 128,
+      "code": "062128"
+    }
+  },
+  {
+    "code": "11290",
+    "province_code": "11",
+    "name": "성북구",
+    "name_en": "Seongbuk-gu",
+    "full_name": "서울특별시 성북구",
+    "type": "구",
+    "lat": 37.5894,
+    "lon": 127.0167,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "11305",
+    "province_code": "11",
+    "name": "강북구",
+    "name_en": "Gangbuk-gu",
+    "full_name": "서울특별시 강북구",
+    "type": "구",
+    "lat": 37.6397,
+    "lon": 127.0256,
+    "weather_grid": {
+      "x": 61,
+      "y": 128,
+      "code": "061128"
+    }
+  },
+  {
+    "code": "11320",
+    "province_code": "11",
+    "name": "도봉구",
+    "name_en": "Dobong-gu",
+    "full_name": "서울특별시 도봉구",
+    "type": "구",
+    "lat": 37.6688,
+    "lon": 127.0471,
+    "weather_grid": {
+      "x": 61,
+      "y": 129,
+      "code": "061129"
+    }
+  },
+  {
+    "code": "11350",
+    "province_code": "11",
+    "name": "노원구",
+    "name_en": "Nowon-gu",
+    "full_name": "서울특별시 노원구",
+    "type": "구",
+    "lat": 37.6542,
+    "lon": 127.0568,
+    "weather_grid": {
+      "x": 61,
+      "y": 129,
+      "code": "061129"
+    }
+  },
+  {
+    "code": "11380",
+    "province_code": "11",
+    "name": "은평구",
+    "name_en": "Eunpyeong-gu",
+    "full_name": "서울특별시 은평구",
+    "type": "구",
+    "lat": 37.6027,
+    "lon": 126.929,
+    "weather_grid": {
+      "x": 59,
+      "y": 127,
+      "code": "059127"
+    }
+  },
+  {
+    "code": "11410",
+    "province_code": "11",
+    "name": "서대문구",
+    "name_en": "Seodaemun-gu",
+    "full_name": "서울특별시 서대문구",
+    "type": "구",
+    "lat": 37.5791,
+    "lon": 126.9368,
+    "weather_grid": {
+      "x": 59,
+      "y": 127,
+      "code": "059127"
+    }
+  },
+  {
+    "code": "11440",
+    "province_code": "11",
+    "name": "마포구",
+    "name_en": "Mapo-gu",
+    "full_name": "서울특별시 마포구",
+    "type": "구",
+    "lat": 37.5663,
+    "lon": 126.9019,
+    "weather_grid": {
+      "x": 59,
+      "y": 127,
+      "code": "059127"
+    }
+  },
+  {
+    "code": "11470",
+    "province_code": "11",
+    "name": "양천구",
+    "name_en": "Yangcheon-gu",
+    "full_name": "서울특별시 양천구",
+    "type": "구",
+    "lat": 37.517,
+    "lon": 126.8664,
+    "weather_grid": {
+      "x": 58,
+      "y": 126,
+      "code": "058126"
+    }
+  },
+  {
+    "code": "11500",
+    "province_code": "11",
+    "name": "강서구",
+    "name_en": "Gangseo-gu",
+    "full_name": "서울특별시 강서구",
+    "type": "구",
+    "lat": 37.5509,
+    "lon": 126.8495,
+    "weather_grid": {
+      "x": 58,
+      "y": 126,
+      "code": "058126"
+    }
+  },
+  {
+    "code": "11530",
+    "province_code": "11",
+    "name": "구로구",
+    "name_en": "Guro-gu",
+    "full_name": "서울특별시 구로구",
+    "type": "구",
+    "lat": 37.4954,
+    "lon": 126.8874,
+    "weather_grid": {
+      "x": 58,
+      "y": 125,
+      "code": "058125"
+    }
+  },
+  {
+    "code": "11545",
+    "province_code": "11",
+    "name": "금천구",
+    "name_en": "Geumcheon-gu",
+    "full_name": "서울특별시 금천구",
+    "type": "구",
+    "lat": 37.4519,
+    "lon": 126.9018,
+    "weather_grid": {
+      "x": 59,
+      "y": 124,
+      "code": "059124"
+    }
+  },
+  {
+    "code": "11560",
+    "province_code": "11",
+    "name": "영등포구",
+    "name_en": "Yeongdeungpo-gu",
+    "full_name": "서울특별시 영등포구",
+    "type": "구",
+    "lat": 37.5264,
+    "lon": 126.8963,
+    "weather_grid": {
+      "x": 58,
+      "y": 126,
+      "code": "058126"
+    }
+  },
+  {
+    "code": "11590",
+    "province_code": "11",
+    "name": "동작구",
+    "name_en": "Dongjak-gu",
+    "full_name": "서울특별시 동작구",
+    "type": "구",
+    "lat": 37.5124,
+    "lon": 126.9393,
+    "weather_grid": {
+      "x": 59,
+      "y": 126,
+      "code": "059126"
+    }
+  },
+  {
+    "code": "11620",
+    "province_code": "11",
+    "name": "관악구",
+    "name_en": "Gwanak-gu",
+    "full_name": "서울특별시 관악구",
+    "type": "구",
+    "lat": 37.4784,
+    "lon": 126.9516,
+    "weather_grid": {
+      "x": 59,
+      "y": 125,
+      "code": "059125"
+    }
+  },
+  {
+    "code": "11650",
+    "province_code": "11",
+    "name": "서초구",
+    "name_en": "Seocho-gu",
+    "full_name": "서울특별시 서초구",
+    "type": "구",
+    "lat": 37.4837,
+    "lon": 127.0324,
+    "weather_grid": {
+      "x": 61,
+      "y": 125,
+      "code": "061125"
+    }
+  },
+  {
+    "code": "11680",
+    "province_code": "11",
+    "name": "강남구",
+    "name_en": "Gangnam-gu",
+    "full_name": "서울특별시 강남구",
+    "type": "구",
+    "lat": 37.5172,
+    "lon": 127.0473,
+    "weather_grid": {
+      "x": 61,
+      "y": 126,
+      "code": "061126"
+    }
+  },
+  {
+    "code": "11710",
+    "province_code": "11",
+    "name": "송파구",
+    "name_en": "Songpa-gu",
+    "full_name": "서울특별시 송파구",
+    "type": "구",
+    "lat": 37.5145,
+    "lon": 127.1059,
+    "weather_grid": {
+      "x": 62,
+      "y": 126,
+      "code": "062126"
+    }
+  },
+  {
+    "code": "11740",
+    "province_code": "11",
+    "name": "강동구",
+    "name_en": "Gangdong-gu",
+    "full_name": "서울특별시 강동구",
+    "type": "구",
+    "lat": 37.5301,
+    "lon": 127.1238,
+    "weather_grid": {
+      "x": 62,
+      "y": 126,
+      "code": "062126"
+    }
+  },
+  {
+    "code": "26110",
+    "province_code": "26",
+    "name": "중구",
+    "name_en": "Jung-gu",
+    "full_name": "부산광역시 중구",
+    "type": "구",
+    "lat": 35.1064,
+    "lon": 129.0324,
+    "weather_grid": {
+      "x": 97,
+      "y": 74,
+      "code": "097074"
+    }
+  },
+  {
+    "code": "26140",
+    "province_code": "26",
+    "name": "서구",
+    "name_en": "Seo-gu",
+    "full_name": "부산광역시 서구",
+    "type": "구",
+    "lat": 35.0978,
+    "lon": 129.0242,
+    "weather_grid": {
+      "x": 97,
+      "y": 74,
+      "code": "097074"
+    }
+  },
+  {
+    "code": "26170",
+    "province_code": "26",
+    "name": "동구",
+    "name_en": "Dong-gu",
+    "full_name": "부산광역시 동구",
+    "type": "구",
+    "lat": 35.1295,
+    "lon": 129.0454,
+    "weather_grid": {
+      "x": 97,
+      "y": 75,
+      "code": "097075"
+    }
+  },
+  {
+    "code": "26200",
+    "province_code": "26",
+    "name": "영도구",
+    "name_en": "Yeongdo-gu",
+    "full_name": "부산광역시 영도구",
+    "type": "구",
+    "lat": 35.0914,
+    "lon": 129.0679,
+    "weather_grid": {
+      "x": 98,
+      "y": 74,
+      "code": "098074"
+    }
+  },
+  {
+    "code": "26230",
+    "province_code": "26",
+    "name": "부산진구",
+    "name_en": "Busanjin-gu",
+    "full_name": "부산광역시 부산진구",
+    "type": "구",
+    "lat": 35.1626,
+    "lon": 129.0532,
+    "weather_grid": {
+      "x": 97,
+      "y": 75,
+      "code": "097075"
+    }
+  },
+  {
+    "code": "26260",
+    "province_code": "26",
+    "name": "동래구",
+    "name_en": "Dongnae-gu",
+    "full_name": "부산광역시 동래구",
+    "type": "구",
+    "lat": 35.2048,
+    "lon": 129.0783,
+    "weather_grid": {
+      "x": 98,
+      "y": 76,
+      "code": "098076"
+    }
+  },
+  {
+    "code": "26290",
+    "province_code": "26",
+    "name": "남구",
+    "name_en": "Nam-gu",
+    "full_name": "부산광역시 남구",
+    "type": "구",
+    "lat": 35.1362,
+    "lon": 129.0845,
+    "weather_grid": {
+      "x": 98,
+      "y": 75,
+      "code": "098075"
+    }
+  },
+  {
+    "code": "26320",
+    "province_code": "26",
+    "name": "북구",
+    "name_en": "Buk-gu",
+    "full_name": "부산광역시 북구",
+    "type": "구",
+    "lat": 35.1975,
+    "lon": 128.99,
+    "weather_grid": {
+      "x": 96,
+      "y": 76,
+      "code": "096076"
+    }
+  },
+  {
+    "code": "26350",
+    "province_code": "26",
+    "name": "해운대구",
+    "name_en": "Haeundae-gu",
+    "full_name": "부산광역시 해운대구",
+    "type": "구",
+    "lat": 35.1631,
+    "lon": 129.1635,
+    "weather_grid": {
+      "x": 99,
+      "y": 75,
+      "code": "099075"
+    }
+  },
+  {
+    "code": "26380",
+    "province_code": "26",
+    "name": "사하구",
+    "name_en": "Saha-gu",
+    "full_name": "부산광역시 사하구",
+    "type": "구",
+    "lat": 35.1043,
+    "lon": 128.9746,
+    "weather_grid": {
+      "x": 96,
+      "y": 74,
+      "code": "096074"
+    }
+  },
+  {
+    "code": "26410",
+    "province_code": "26",
+    "name": "금정구",
+    "name_en": "Geumjeong-gu",
+    "full_name": "부산광역시 금정구",
+    "type": "구",
+    "lat": 35.2429,
+    "lon": 129.0927,
+    "weather_grid": {
+      "x": 98,
+      "y": 77,
+      "code": "098077"
+    }
+  },
+  {
+    "code": "26440",
+    "province_code": "26",
+    "name": "강서구",
+    "name_en": "Gangseo-gu",
+    "full_name": "부산광역시 강서구",
+    "type": "구",
+    "lat": 35.2119,
+    "lon": 128.9802,
+    "weather_grid": {
+      "x": 96,
+      "y": 76,
+      "code": "096076"
+    }
+  },
+  {
+    "code": "26470",
+    "province_code": "26",
+    "name": "연제구",
+    "name_en": "Yeonje-gu",
+    "full_name": "부산광역시 연제구",
+    "type": "구",
+    "lat": 35.1762,
+    "lon": 129.0797,
+    "weather_grid": {
+      "x": 98,
+      "y": 76,
+      "code": "098076"
+    }
+  },
+  {
+    "code": "26500",
+    "province_code": "26",
+    "name": "수영구",
+    "name_en": "Suyeong-gu",
+    "full_name": "부산광역시 수영구",
+    "type": "구",
+    "lat": 35.1453,
+    "lon": 129.1134,
+    "weather_grid": {
+      "x": 99,
+      "y": 75,
+      "code": "099075"
+    }
+  },
+  {
+    "code": "26530",
+    "province_code": "26",
+    "name": "사상구",
+    "name_en": "Sasang-gu",
+    "full_name": "부산광역시 사상구",
+    "type": "구",
+    "lat": 35.1527,
+    "lon": 128.991,
+    "weather_grid": {
+      "x": 96,
+      "y": 75,
+      "code": "096075"
+    }
+  },
+  {
+    "code": "26710",
+    "province_code": "26",
+    "name": "기장군",
+    "name_en": "Gijang-gun",
+    "full_name": "부산광역시 기장군",
+    "type": "군",
+    "lat": 35.2446,
+    "lon": 129.2219,
+    "weather_grid": {
+      "x": 100,
+      "y": 77,
+      "code": "100077"
+    }
+  },
+  {
+    "code": "41111",
+    "province_code": "41",
+    "name": "수원시",
+    "name_en": "Suwon-si",
+    "full_name": "경기도 수원시",
+    "type": "시",
+    "lat": 37.2636,
+    "lon": 127.0286,
+    "weather_grid": {
+      "x": 61,
+      "y": 120,
+      "code": "061120"
+    }
+  },
+  {
+    "code": "41131",
+    "province_code": "41",
+    "name": "성남시",
+    "name_en": "Seongnam-si",
+    "full_name": "경기도 성남시",
+    "type": "시",
+    "lat": 37.4201,
+    "lon": 127.1262,
+    "weather_grid": {
+      "x": 62,
+      "y": 124,
+      "code": "062124"
+    }
+  },
+  {
+    "code": "41150",
+    "province_code": "41",
+    "name": "의정부시",
+    "name_en": "Uijeongbu-si",
+    "full_name": "경기도 의정부시",
+    "type": "시",
+    "lat": 37.7382,
+    "lon": 127.0338,
+    "weather_grid": {
+      "x": 61,
+      "y": 130,
+      "code": "061130"
+    }
+  },
+  {
+    "code": "41171",
+    "province_code": "41",
+    "name": "안양시",
+    "name_en": "Anyang-si",
+    "full_name": "경기도 안양시",
+    "type": "시",
+    "lat": 37.3943,
+    "lon": 126.9568,
+    "weather_grid": {
+      "x": 59,
+      "y": 123,
+      "code": "059123"
+    }
+  },
+  {
+    "code": "41190",
+    "province_code": "41",
+    "name": "부천시",
+    "name_en": "Bucheon-si",
+    "full_name": "경기도 부천시",
+    "type": "시",
+    "lat": 37.5034,
+    "lon": 126.766,
+    "weather_grid": {
+      "x": 56,
+      "y": 125,
+      "code": "056125"
+    }
+  },
+  {
+    "code": "41210",
+    "province_code": "41",
+    "name": "광명시",
+    "name_en": "Gwangmyeong-si",
+    "full_name": "경기도 광명시",
+    "type": "시",
+    "lat": 37.4786,
+    "lon": 126.8644,
+    "weather_grid": {
+      "x": 58,
+      "y": 125,
+      "code": "058125"
+    }
+  },
+  {
+    "code": "41220",
+    "province_code": "41",
+    "name": "평택시",
+    "name_en": "Pyeongtaek-si",
+    "full_name": "경기도 평택시",
+    "type": "시",
+    "lat": 36.9922,
+    "lon": 127.1129,
+    "weather_grid": {
+      "x": 62,
+      "y": 114,
+      "code": "062114"
+    }
+  },
+  {
+    "code": "41250",
+    "province_code": "41",
+    "name": "동두천시",
+    "name_en": "Dongducheon-si",
+    "full_name": "경기도 동두천시",
+    "type": "시",
+    "lat": 37.9034,
+    "lon": 127.0606,
+    "weather_grid": {
+      "x": 61,
+      "y": 134,
+      "code": "061134"
+    }
+  },
+  {
+    "code": "41271",
+    "province_code": "41",
+    "name": "안산시",
+    "name_en": "Ansan-si",
+    "full_name": "경기도 안산시",
+    "type": "시",
+    "lat": 37.3219,
+    "lon": 126.8309,
+    "weather_grid": {
+      "x": 57,
+      "y": 121,
+      "code": "057121"
+    }
+  },
+  {
+    "code": "41281",
+    "province_code": "41",
+    "name": "고양시",
+    "name_en": "Goyang-si",
+    "full_name": "경기도 고양시",
+    "type": "시",
+    "lat": 37.6584,
+    "lon": 126.832,
+    "weather_grid": {
+      "x": 57,
+      "y": 129,
+      "code": "057129"
+    }
+  },
+  {
+    "code": "41290",
+    "province_code": "41",
+    "name": "과천시",
+    "name_en": "Gwacheon-si",
+    "full_name": "경기도 과천시",
+    "type": "시",
+    "lat": 37.4292,
+    "lon": 126.9875,
+    "weather_grid": {
+      "x": 60,
+      "y": 124,
+      "code": "060124"
+    }
+  },
+  {
+    "code": "41310",
+    "province_code": "41",
+    "name": "구리시",
+    "name_en": "Guri-si",
+    "full_name": "경기도 구리시",
+    "type": "시",
+    "lat": 37.5943,
+    "lon": 127.1296,
+    "weather_grid": {
+      "x": 62,
+      "y": 127,
+      "code": "062127"
+    }
+  },
+  {
+    "code": "41360",
+    "province_code": "41",
+    "name": "남양주시",
+    "name_en": "Namyangju-si",
+    "full_name": "경기도 남양주시",
+    "type": "시",
+    "lat": 37.6364,
+    "lon": 127.2164,
+    "weather_grid": {
+      "x": 64,
+      "y": 128,
+      "code": "064128"
+    }
+  },
+  {
+    "code": "41370",
+    "province_code": "41",
+    "name": "오산시",
+    "name_en": "Osan-si",
+    "full_name": "경기도 오산시",
+    "type": "시",
+    "lat": 37.1498,
+    "lon": 127.0773,
+    "weather_grid": {
+      "x": 62,
+      "y": 118,
+      "code": "062118"
+    }
+  },
+  {
+    "code": "41390",
+    "province_code": "41",
+    "name": "시흥시",
+    "name_en": "Siheung-si",
+    "full_name": "경기도 시흥시",
+    "type": "시",
+    "lat": 37.38,
+    "lon": 126.8028,
+    "weather_grid": {
+      "x": 57,
+      "y": 123,
+      "code": "057123"
+    }
+  },
+  {
+    "code": "41410",
+    "province_code": "41",
+    "name": "군포시",
+    "name_en": "Gunpo-si",
+    "full_name": "경기도 군포시",
+    "type": "시",
+    "lat": 37.3616,
+    "lon": 126.9352,
+    "weather_grid": {
+      "x": 59,
+      "y": 122,
+      "code": "059122"
+    }
+  },
+  {
+    "code": "41430",
+    "province_code": "41",
+    "name": "의왕시",
+    "name_en": "Uiwang-si",
+    "full_name": "경기도 의왕시",
+    "type": "시",
+    "lat": 37.3449,
+    "lon": 126.9683,
+    "weather_grid": {
+      "x": 60,
+      "y": 122,
+      "code": "060122"
+    }
+  },
+  {
+    "code": "41450",
+    "province_code": "41",
+    "name": "하남시",
+    "name_en": "Hanam-si",
+    "full_name": "경기도 하남시",
+    "type": "시",
+    "lat": 37.5393,
+    "lon": 127.2015,
+    "weather_grid": {
+      "x": 64,
+      "y": 126,
+      "code": "064126"
+    }
+  },
+  {
+    "code": "41461",
+    "province_code": "41",
+    "name": "용인시",
+    "name_en": "Yongin-si",
+    "full_name": "경기도 용인시",
+    "type": "시",
+    "lat": 37.2411,
+    "lon": 127.1776,
+    "weather_grid": {
+      "x": 63,
+      "y": 120,
+      "code": "063120"
+    }
+  },
+  {
+    "code": "41480",
+    "province_code": "41",
+    "name": "파주시",
+    "name_en": "Paju-si",
+    "full_name": "경기도 파주시",
+    "type": "시",
+    "lat": 37.7599,
+    "lon": 126.78,
+    "weather_grid": {
+      "x": 56,
+      "y": 131,
+      "code": "056131"
+    }
+  },
+  {
+    "code": "41500",
+    "province_code": "41",
+    "name": "이천시",
+    "name_en": "Icheon-si",
+    "full_name": "경기도 이천시",
+    "type": "시",
+    "lat": 37.2722,
+    "lon": 127.435,
+    "weather_grid": {
+      "x": 68,
+      "y": 120,
+      "code": "068120"
+    }
+  },
+  {
+    "code": "41550",
+    "province_code": "41",
+    "name": "안성시",
+    "name_en": "Anseong-si",
+    "full_name": "경기도 안성시",
+    "type": "시",
+    "lat": 37.0079,
+    "lon": 127.2797,
+    "weather_grid": {
+      "x": 65,
+      "y": 115,
+      "code": "065115"
+    }
+  },
+  {
+    "code": "41570",
+    "province_code": "41",
+    "name": "김포시",
+    "name_en": "Gimpo-si",
+    "full_name": "경기도 김포시",
+    "type": "시",
+    "lat": 37.6152,
+    "lon": 126.7157,
+    "weather_grid": {
+      "x": 55,
+      "y": 128,
+      "code": "055128"
+    }
+  },
+  {
+    "code": "41590",
+    "province_code": "41",
+    "name": "화성시",
+    "name_en": "Hwaseong-si",
+    "full_name": "경기도 화성시",
+    "type": "시",
+    "lat": 37.1993,
+    "lon": 126.8319,
+    "weather_grid": {
+      "x": 57,
+      "y": 119,
+      "code": "057119"
+    }
+  },
+  {
+    "code": "41610",
+    "province_code": "41",
+    "name": "광주시",
+    "name_en": "Gwangju-si",
+    "full_name": "경기도 광주시",
+    "type": "시",
+    "lat": 37.4292,
+    "lon": 127.2555,
+    "weather_grid": {
+      "x": 65,
+      "y": 124,
+      "code": "065124"
+    }
+  },
+  {
+    "code": "41630",
+    "province_code": "41",
+    "name": "양주시",
+    "name_en": "Yangju-si",
+    "full_name": "경기도 양주시",
+    "type": "시",
+    "lat": 37.7853,
+    "lon": 127.0458,
+    "weather_grid": {
+      "x": 61,
+      "y": 131,
+      "code": "061131"
+    }
+  },
+  {
+    "code": "41650",
+    "province_code": "41",
+    "name": "포천시",
+    "name_en": "Pocheon-si",
+    "full_name": "경기도 포천시",
+    "type": "시",
+    "lat": 37.8949,
+    "lon": 127.2003,
+    "weather_grid": {
+      "x": 64,
+      "y": 134,
+      "code": "064134"
+    }
+  },
+  {
+    "code": "41670",
+    "province_code": "41",
+    "name": "여주시",
+    "name_en": "Yeoju-si",
+    "full_name": "경기도 여주시",
+    "type": "시",
+    "lat": 37.2976,
+    "lon": 127.6378,
+    "weather_grid": {
+      "x": 71,
+      "y": 121,
+      "code": "071121"
+    }
+  },
+  {
+    "code": "41800",
+    "province_code": "41",
+    "name": "연천군",
+    "name_en": "Yeoncheon-gun",
+    "full_name": "경기도 연천군",
+    "type": "군",
+    "lat": 38.0964,
+    "lon": 127.0745,
+    "weather_grid": {
+      "x": 61,
+      "y": 138,
+      "code": "061138"
+    }
+  },
+  {
+    "code": "41820",
+    "province_code": "41",
+    "name": "가평군",
+    "name_en": "Gapyeong-gun",
+    "full_name": "경기도 가평군",
+    "type": "군",
+    "lat": 37.8314,
+    "lon": 127.5095,
+    "weather_grid": {
+      "x": 69,
+      "y": 133,
+      "code": "069133"
+    }
+  },
+  {
+    "code": "41830",
+    "province_code": "41",
+    "name": "양평군",
+    "name_en": "Yangpyeong-gun",
+    "full_name": "경기도 양평군",
+    "type": "군",
+    "lat": 37.4914,
+    "lon": 127.4874,
+    "weather_grid": {
+      "x": 69,
+      "y": 125,
+      "code": "069125"
+    }
+  },
+  {
+    "code": "46110",
+    "province_code": "46",
+    "name": "목포시",
+    "name_en": "Mokpo-si",
+    "full_name": "전라남도 목포시",
+    "type": "시",
+    "lat": 34.8118,
+    "lon": 126.3922,
+    "weather_grid": {
+      "x": 50,
+      "y": 67,
+      "code": "050067"
+    }
+  },
+  {
+    "code": "46130",
+    "province_code": "46",
+    "name": "여수시",
+    "name_en": "Yeosu-si",
+    "full_name": "전라남도 여수시",
+    "type": "시",
+    "lat": 34.7604,
+    "lon": 127.6622,
+    "weather_grid": {
+      "x": 73,
+      "y": 66,
+      "code": "073066"
+    }
+  },
+  {
+    "code": "46150",
+    "province_code": "46",
+    "name": "순천시",
+    "name_en": "Suncheon-si",
+    "full_name": "전라남도 순천시",
+    "type": "시",
+    "lat": 34.9507,
+    "lon": 127.4872,
+    "weather_grid": {
+      "x": 70,
+      "y": 70,
+      "code": "070070"
+    }
+  },
+  {
+    "code": "46170",
+    "province_code": "46",
+    "name": "나주시",
+    "name_en": "Naju-si",
+    "full_name": "전라남도 나주시",
+    "type": "시",
+    "lat": 35.016,
+    "lon": 126.7107,
+    "weather_grid": {
+      "x": 56,
+      "y": 71,
+      "code": "056071"
+    }
+  },
+  {
+    "code": "46200",
+    "province_code": "46",
+    "name": "광양시",
+    "name_en": "Gwangyang-si",
+    "full_name": "전라남도 광양시",
+    "type": "시",
+    "lat": 34.9406,
+    "lon": 127.6956,
+    "weather_grid": {
+      "x": 73,
+      "y": 70,
+      "code": "073070"
+    }
+  }
+]

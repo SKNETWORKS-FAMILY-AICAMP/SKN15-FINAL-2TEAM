@@ -33,7 +33,7 @@ const PlacesPage = () => {
   const [popularPlaces, setPopularPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [region1Filter, setRegion1Filter] = useState('');
+  const [provinceFilter, setProvinceFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [minRating, setMinRating] = useState<number | ''>('');
   const [page, setPage] = useState(1);
@@ -50,7 +50,7 @@ const PlacesPage = () => {
   // Load places when filters change
   useEffect(() => {
     loadPlaces();
-  }, [page, region1Filter, typeFilter, minRating]);
+  }, [page, provinceFilter, typeFilter, minRating]);
 
   const loadPopularPlaces = async () => {
     try {
@@ -69,7 +69,7 @@ const PlacesPage = () => {
         page: page,
       };
 
-      if (region1Filter) params.region1 = region1Filter;
+      if (provinceFilter) params.province = provinceFilter;
       if (typeFilter) params.type = typeFilter;
       if (minRating) params.min_rating = minRating;
 
@@ -184,10 +184,10 @@ const PlacesPage = () => {
               <FormControl fullWidth>
                 <InputLabel>지역</InputLabel>
                 <Select
-                  value={region1Filter}
+                  value={provinceFilter}
                   label="지역"
                   onChange={(e) => {
-                    setRegion1Filter(e.target.value);
+                    setProvinceFilter(e.target.value);
                     setPage(1);
                   }}
                 >
@@ -285,7 +285,7 @@ const PlacesPage = () => {
                       </Typography>
                     </Box>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                      {place.region1}
+                      {place.province}
                     </Typography>
                   </CardContent>
                 </Card>

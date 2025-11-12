@@ -1,9 +1,9 @@
 from django.db import models
-from apps.common.models import Country, Region1
+from apps.common.models import Country, Province, City, District
 
 
 class WeatherDaily(models.Model):
-    """Daily weather forecast data"""
+    """Daily weather forecast data from KMA (기상청)"""
     weather_daily_idx = models.AutoField(primary_key=True)
     country_code = models.ForeignKey(
         Country,
@@ -14,31 +14,76 @@ class WeatherDaily(models.Model):
         to_field='country_code',
         related_name='daily_weather'
     )
-    city_code = models.ForeignKey(
-        Region1,
+    province_idx = models.ForeignKey(
+        Province,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='city_code',
-        to_field='city_code',
+        db_column='province_idx',
+        related_name='daily_weather'
+    )
+    city_idx = models.ForeignKey(
+        City,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='city_idx',
+        related_name='daily_weather'
+    )
+    district_idx = models.ForeignKey(
+        District,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='district_idx',
         related_name='daily_weather'
     )
     forecast_date = models.DateField()
-    weather = models.TextField(null=True, blank=True)
+
+    # 오전/오후 날씨
+    weather_am = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Morning weather condition (맑음, 구름많음, 흐림, 비, 눈 등)"
+    )
+    weather_pm = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Afternoon weather condition"
+    )
+
+    # 기온
     temp_min_c = models.DecimalField(
         max_digits=5,
-        decimal_places=2,
+        decimal_places=1,
         null=True,
         blank=True,
         help_text="Minimum temperature in Celsius"
     )
     temp_max_c = models.DecimalField(
         max_digits=5,
-        decimal_places=2,
+        decimal_places=1,
         null=True,
         blank=True,
         help_text="Maximum temperature in Celsius"
     )
+
+    # 강수확률
+    precipitation_am = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Morning precipitation probability (%)"
+    )
+    precipitation_pm = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Afternoon precipitation probability (%)"
+    )
+
+    # 기존 호환성 유지
+    weather = models.TextField(null=True, blank=True, help_text="Legacy field")
     rainfall_mm = models.DecimalField(
         max_digits=7,
         decimal_places=2,
@@ -46,22 +91,33 @@ class WeatherDaily(models.Model):
         blank=True,
         help_text="Rainfall in millimeters"
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'weather_daily'
-        unique_together = [['city_code', 'forecast_date']]
+        unique_together = [['district_idx', 'forecast_date']]
         verbose_name = 'Daily Weather'
         verbose_name_plural = 'Daily Weather'
         ordering = ['-forecast_date']
         indexes = [
             models.Index(fields=['forecast_date']),
-            models.Index(fields=['city_code', 'forecast_date']),
+            models.Index(fields=['province_idx', 'forecast_date']),
+            models.Index(fields=['city_idx', 'forecast_date']),
+            models.Index(fields=['district_idx', 'forecast_date']),
         ]
 
     def __str__(self):
-        city_name = self.city_code.city_name if self.city_code else "Unknown"
-        return f"{city_name} - {self.forecast_date}"
+        if self.district_idx:
+            location = f"{self.district_idx.name}"
+        elif self.city_idx:
+            location = f"{self.city_idx.name}"
+        elif self.province_idx:
+            location = f"{self.province_idx.name}"
+        else:
+            location = "Unknown"
+        return f"{location} - {self.forecast_date}"
 
 
 class WeatherMonthly(models.Model):
@@ -76,13 +132,12 @@ class WeatherMonthly(models.Model):
         to_field='country_code',
         related_name='monthly_weather'
     )
-    city_code = models.ForeignKey(
-        Region1,
+    province_idx = models.ForeignKey(
+        Province,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='city_code',
-        to_field='city_code',
+        db_column='province_idx',
         related_name='monthly_weather'
     )
     month = models.IntegerField(
@@ -132,15 +187,15 @@ class WeatherMonthly(models.Model):
 
     class Meta:
         db_table = 'weather_monthly'
-        unique_together = [['city_code', 'month']]
+        unique_together = [['province_idx', 'month']]
         verbose_name = 'Monthly Weather'
         verbose_name_plural = 'Monthly Weather'
         ordering = ['month']
         indexes = [
             models.Index(fields=['month']),
-            models.Index(fields=['city_code', 'month']),
+            models.Index(fields=['province_idx', 'month']),
         ]
 
     def __str__(self):
-        city_name = self.city_code.city_name if self.city_code else "Unknown"
-        return f"{city_name} - Month {self.month}"
+        province_name = self.province_idx.name if self.province_idx else "Unknown"
+        return f"{province_name} - Month {self.month}"

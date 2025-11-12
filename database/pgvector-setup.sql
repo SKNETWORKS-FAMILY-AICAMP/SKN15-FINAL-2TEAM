@@ -1,7 +1,7 @@
 -- pgvector Extension Setup
 -- This enables vector similarity search for RAG implementation
 
-\c triplan
+\c lecun2
 
 -- Create pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;

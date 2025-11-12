@@ -1,0 +1,402 @@
+[
+  {
+    "code": "1111000101",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "청운동",
+    "name_en": "Cheongun-dong",
+    "full_name": "서울특별시 종로구 청운동",
+    "type": "동",
+    "lat": 37.582,
+    "lon": 126.9686,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000102",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "신교동",
+    "name_en": "Singyo-dong",
+    "full_name": "서울특별시 종로구 신교동",
+    "type": "동",
+    "lat": 37.5789,
+    "lon": 126.9722,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000103",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "궁정동",
+    "name_en": "Gungjeong-dong",
+    "full_name": "서울특별시 종로구 궁정동",
+    "type": "동",
+    "lat": 37.575,
+    "lon": 126.975,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000104",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "효자동",
+    "name_en": "Hyoja-dong",
+    "full_name": "서울특별시 종로구 효자동",
+    "type": "동",
+    "lat": 37.5795,
+    "lon": 126.9717,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000105",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "창성동",
+    "name_en": "Changseong-dong",
+    "full_name": "서울특별시 종로구 창성동",
+    "type": "동",
+    "lat": 37.5769,
+    "lon": 126.9653,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000106",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "통의동",
+    "name_en": "Tongui-dong",
+    "full_name": "서울특별시 종로구 통의동",
+    "type": "동",
+    "lat": 37.5792,
+    "lon": 126.9733,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000107",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "적선동",
+    "name_en": "Jeokseon-dong",
+    "full_name": "서울특별시 종로구 적선동",
+    "type": "동",
+    "lat": 37.5806,
+    "lon": 126.9761,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000108",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "통인동",
+    "name_en": "Tongin-dong",
+    "full_name": "서울특별시 종로구 통인동",
+    "type": "동",
+    "lat": 37.5806,
+    "lon": 126.9708,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000109",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "누상동",
+    "name_en": "Nusang-dong",
+    "full_name": "서울특별시 종로구 누상동",
+    "type": "동",
+    "lat": 37.5794,
+    "lon": 126.9642,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000110",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "누하동",
+    "name_en": "Nuha-dong",
+    "full_name": "서울특별시 종로구 누하동",
+    "type": "동",
+    "lat": 37.5778,
+    "lon": 126.9633,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000111",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "옥인동",
+    "name_en": "Ogin-dong",
+    "full_name": "서울특별시 종로구 옥인동",
+    "type": "동",
+    "lat": 37.5817,
+    "lon": 126.9653,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000112",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "체부동",
+    "name_en": "Chebu-dong",
+    "full_name": "서울특별시 종로구 체부동",
+    "type": "동",
+    "lat": 37.5842,
+    "lon": 126.9669,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000113",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "필운동",
+    "name_en": "Pirwoon-dong",
+    "full_name": "서울특별시 종로구 필운동",
+    "type": "동",
+    "lat": 37.5828,
+    "lon": 126.9667,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000114",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "내자동",
+    "name_en": "Naeja-dong",
+    "full_name": "서울특별시 종로구 내자동",
+    "type": "동",
+    "lat": 37.575,
+    "lon": 126.9717,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000115",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "사직동",
+    "name_en": "Sajik-dong",
+    "full_name": "서울특별시 종로구 사직동",
+    "type": "동",
+    "lat": 37.5769,
+    "lon": 126.9686,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000116",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "도렴동",
+    "name_en": "Doryeom-dong",
+    "full_name": "서울특별시 종로구 도렴동",
+    "type": "동",
+    "lat": 37.5703,
+    "lon": 126.9736,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000117",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "당주동",
+    "name_en": "Dangju-dong",
+    "full_name": "서울특별시 종로구 당주동",
+    "type": "동",
+    "lat": 37.5731,
+    "lon": 126.975,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000118",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "내수동",
+    "name_en": "Naesu-dong",
+    "full_name": "서울특별시 종로구 내수동",
+    "type": "동",
+    "lat": 37.5742,
+    "lon": 126.9725,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000119",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "세종로",
+    "name_en": "Sejong-ro",
+    "full_name": "서울특별시 종로구 세종로",
+    "type": "동",
+    "lat": 37.572,
+    "lon": 126.9769,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "1111000120",
+    "city_code": "11110",
+    "province_code": "11",
+    "name": "신문로1가",
+    "name_en": "Sinmunno 1-ga",
+    "full_name": "서울특별시 종로구 신문로1가",
+    "type": "동",
+    "lat": 37.5711,
+    "lon": 126.9758,
+    "weather_grid": {
+      "x": 60,
+      "y": 127,
+      "code": "060127"
+    }
+  },
+  {
+    "code": "2635000101",
+    "city_code": "26350",
+    "province_code": "26",
+    "name": "우동",
+    "name_en": "U-dong",
+    "full_name": "부산광역시 해운대구 우동",
+    "type": "동",
+    "lat": 35.1628,
+    "lon": 129.1625,
+    "weather_grid": {
+      "x": 99,
+      "y": 75,
+      "code": "099075"
+    }
+  },
+  {
+    "code": "2635000102",
+    "city_code": "26350",
+    "province_code": "26",
+    "name": "중동",
+    "name_en": "Jung-dong",
+    "full_name": "부산광역시 해운대구 중동",
+    "type": "동",
+    "lat": 35.1586,
+    "lon": 129.1594,
+    "weather_grid": {
+      "x": 99,
+      "y": 75,
+      "code": "099075"
+    }
+  },
+  {
+    "code": "2635000103",
+    "city_code": "26350",
+    "province_code": "26",
+    "name": "송정동",
+    "name_en": "Songjeong-dong",
+    "full_name": "부산광역시 해운대구 송정동",
+    "type": "동",
+    "lat": 35.1786,
+    "lon": 129.2006,
+    "weather_grid": {
+      "x": 100,
+      "y": 76,
+      "code": "100076"
+    }
+  },
+  {
+    "code": "2635000104",
+    "city_code": "26350",
+    "province_code": "26",
+    "name": "재송동",
+    "name_en": "Jaesong-dong",
+    "full_name": "부산광역시 해운대구 재송동",
+    "type": "동",
+    "lat": 35.1889,
+    "lon": 129.1297,
+    "weather_grid": {
+      "x": 99,
+      "y": 76,
+      "code": "099076"
+    }
+  },
+  {
+    "code": "2635000105",
+    "city_code": "26350",
+    "province_code": "26",
+    "name": "반여동",
+    "name_en": "Banyeo-dong",
+    "full_name": "부산광역시 해운대구 반여동",
+    "type": "동",
+    "lat": 35.1872,
+    "lon": 129.1264,
+    "weather_grid": {
+      "x": 99,
+      "y": 76,
+      "code": "099076"
+    }
+  }
+]

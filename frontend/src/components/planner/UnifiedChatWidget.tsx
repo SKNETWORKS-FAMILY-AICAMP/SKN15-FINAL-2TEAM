@@ -706,7 +706,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
               const hasJsonPattern = /\[\s*\{[\s\S]*"name"[\s\S]*\}\s*\]/.test(message.content);
 
               if (hasRecommendationPattern || hasJsonPattern) {
-                console.log('🚫 추천 메시지 필터링: 채팅창에 표시하지 않음');
+                // 추천 메시지는 패널에만 표시
                 return null;
               }
             }

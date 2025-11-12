@@ -1,0 +1,109 @@
+{
+  "total_provinces": 17,
+  "total_cities": 77,
+  "total_districts": 25,
+  "provinces": [
+    {
+      "code": "11",
+      "name": "서울특별시",
+      "cities_count": 25,
+      "districts_count": 20
+    },
+    {
+      "code": "26",
+      "name": "부산광역시",
+      "cities_count": 16,
+      "districts_count": 5
+    },
+    {
+      "code": "27",
+      "name": "대구광역시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "28",
+      "name": "인천광역시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "29",
+      "name": "광주광역시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "30",
+      "name": "대전광역시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "31",
+      "name": "울산광역시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "36",
+      "name": "세종특별자치시",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "41",
+      "name": "경기도",
+      "cities_count": 31,
+      "districts_count": 0
+    },
+    {
+      "code": "42",
+      "name": "강원특별자치도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "43",
+      "name": "충청북도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "44",
+      "name": "충청남도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "45",
+      "name": "전북특별자치도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "46",
+      "name": "전라남도",
+      "cities_count": 5,
+      "districts_count": 0
+    },
+    {
+      "code": "47",
+      "name": "경상북도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "48",
+      "name": "경상남도",
+      "cities_count": 0,
+      "districts_count": 0
+    },
+    {
+      "code": "50",
+      "name": "제주특별자치도",
+      "cities_count": 0,
+      "districts_count": 0
+    }
+  ]
+}

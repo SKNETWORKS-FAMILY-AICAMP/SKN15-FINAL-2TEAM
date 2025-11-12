@@ -1,0 +1,26 @@
+[
+  {
+    "code": "510000000000",
+    "name": "강원특별자치도",
+    "shortName": "강원특별자치도",
+    "x": "",
+    "y": "",
+    "lat": "",
+    "lon": "",
+    "level": "1",
+    "nameEn": "Gang-won-teukbyeoljachido",
+    "shortNameEn": "Gang-won-teukbyeoljachido"
+  },
+  {
+    "code": "410000000000",
+    "name": "경기도",
+    "shortName": "경기도",
+    "x": "",
+    "y": "",
+    "lat": "",
+    "lon": "",
+    "level": "1",
+    "nameEn": "Gyeonggi-do",
+    "shortNameEn": "Gyeonggi-do"
+  }
+]

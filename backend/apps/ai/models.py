@@ -108,23 +108,32 @@ class TripCourseEmbedding(models.Model):
         to_field='country_code',
         related_name='vlogs'
     )
-    region1_idx = models.ForeignKey(
-        'common.Region1',
+    province_idx = models.ForeignKey(
+        'common.Province',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region1_idx',
+        db_column='province_idx',
         related_name='vlogs',
-        help_text='City level'
+        help_text='Province level (시/도)'
     )
-    region2_idx = models.ForeignKey(
-        'common.Region2',
+    city_idx = models.ForeignKey(
+        'common.City',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_column='region2_idx',
+        db_column='city_idx',
         related_name='vlogs',
-        help_text='District level'
+        help_text='City level (시/군/구)'
+    )
+    district_idx = models.ForeignKey(
+        'common.District',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='district_idx',
+        related_name='vlogs',
+        help_text='District level (읍/면/동)'
     )
 
     # Upload info
@@ -132,14 +141,34 @@ class TripCourseEmbedding(models.Model):
     upload_month = models.IntegerField(null=True, blank=True)
     views_num = models.IntegerField(null=True, blank=True)
 
-    # Vector embedding - 핵심! (통합 임베딩 하나만)
-    content_embedding = VectorField(dimensions=1536, null=True, blank=True)
+    # RAG 데이터 - 3단계 구조
+    # 1. 원문 (YouTube 설명 + 자막)
+    raw_content = models.TextField(
+        null=True,
+        blank=True,
+        help_text='YouTube video description and transcript (raw text)'
+    )
 
-    # Original data stored as JSON
+    # 2. 파싱된 여행 경로 (OpenAI로 구조화)
+    parsed_itinerary = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='Structured itinerary parsed by OpenAI (places, activities, order)'
+    )
+
+    # 3. 임베딩 벡터 (파싱된 데이터 기반)
+    content_embedding = VectorField(
+        dimensions=1536,
+        null=True,
+        blank=True,
+        help_text='Vector embedding of parsed itinerary for semantic search'
+    )
+
+    # Legacy metadata field (for backward compatibility)
     metadata = models.JSONField(
         null=True,
         blank=True,
-        help_text='Stores all original data: description, ko, en, schedules, etc.'
+        help_text='[DEPRECATED] Use raw_content and parsed_itinerary instead'
     )
 
     # System fields
@@ -151,13 +180,13 @@ class TripCourseEmbedding(models.Model):
         verbose_name = 'Trip Course Embedding'
         verbose_name_plural = 'Trip Course Embeddings'
         indexes = [
-            models.Index(fields=['country_code', 'region1_idx']),
+            models.Index(fields=['country_code', 'province_idx']),
             models.Index(fields=['upload_year', 'upload_month']),
             models.Index(fields=['-views_num']),
         ]
 
     def __str__(self):
         location = f"{self.country_name}"
-        if self.region1_idx:
-            location += f" - {self.region1_idx.city_name}"
+        if self.province_idx:
+            location += f" - {self.province_idx.name}"
         return f"{self.title} ({location})"

@@ -49,8 +49,8 @@ interface Place {
   name: string;
   ko_name?: string;
   country?: string;
-  region1?: string;
-  region2?: string;
+  province?: string;
+  city?: string;
   address: string;
   latitude: number;
   longitude: number;
@@ -141,8 +141,25 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
                 const mapOption = {
                   center: new window.kakao.maps.LatLng(initialCenter.lat, initialCenter.lng),
                   level: initialZoom,
+                  // 줌/휠 컨트롤 개선
+                  scrollwheel: true,
+                  disableDoubleClick: false,
+                  disableDoubleClickZoom: false,
+                  draggable: true,
                 };
                 const kakaoMap = new window.kakao.maps.Map(mapRef.current, mapOption);
+
+                // 부드러운 줌 애니메이션 활성화
+                kakaoMap.setZoomable(true);
+
+                // 타일 로딩 속도 개선을 위한 설정
+                // 마우스 휠 줌 시 한 번에 1레벨씩만 변경 (기본값: 1)
+                if (window.kakao.maps.event) {
+                  window.kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
+                    // 줌 변경 시 즉시 타일 로딩 (잔상 최소화)
+                  });
+                }
+
                 setMap(kakaoMap);
 
                 // Initialize Places service
@@ -164,8 +181,24 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
             const mapOption = {
               center: new window.kakao.maps.LatLng(initialCenter.lat, initialCenter.lng),
               level: initialZoom,
+              // 줌/휠 컨트롤 개선
+              scrollwheel: true,
+              disableDoubleClick: false,
+              disableDoubleClickZoom: false,
+              draggable: true,
             };
             const kakaoMap = new window.kakao.maps.Map(mapRef.current, mapOption);
+
+            // 부드러운 줌 애니메이션 활성화
+            kakaoMap.setZoomable(true);
+
+            // 타일 로딩 속도 개선을 위한 설정
+            if (window.kakao.maps.event) {
+              window.kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
+                // 줌 변경 시 즉시 타일 로딩 (잔상 최소화)
+              });
+            }
+
             setMap(kakaoMap);
 
             const placesService = new window.kakao.maps.services.Places();
@@ -846,6 +879,11 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
         sx={{
           flex: 1,
           bgcolor: '#f0f0f0',
+          // 하드웨어 가속 및 렌더링 최적화
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased',
+          // 잔상 방지 - transition 제거!
         }}
       />
     </Box>

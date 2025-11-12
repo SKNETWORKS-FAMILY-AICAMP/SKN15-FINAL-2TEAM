@@ -19,5 +19,9 @@ sqlalchemy==1.4.51
 # Utilities
 python-dotenv==1.0.1
 
+# YouTube & OpenAI
+youtube-transcript-api==0.6.2
+yt-dlp==2024.3.10
+openai==1.12.0
 
 tqdm==4.67.1

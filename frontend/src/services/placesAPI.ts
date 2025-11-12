@@ -7,8 +7,8 @@ export interface Place {
   name: string;
   ko_name?: string;
   country: string;
-  region1: string;
-  region2?: string;
+  province: string;
+  city?: string;
   address: string;
   latitude: number;
   longitude: number;
@@ -46,8 +46,8 @@ export interface PlacesListResponse {
 const placesAPI = {
   // Get all places with filters
   getPlaces: async (params?: {
-    region1?: string;
-    region2?: string;
+    province?: string;
+    city?: string;
     country?: string;
     type?: string;
     min_rating?: number;
