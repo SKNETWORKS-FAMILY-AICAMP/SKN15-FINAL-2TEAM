@@ -174,7 +174,6 @@ deploy_nginx() {
 
     # docker-compose.nginx.yml 생성
     cat > docker-compose.nginx.yml <<'EOF'
-version: '3.8'
 
 services:
   nginx:
@@ -222,7 +221,6 @@ deploy_frontend() {
 
     # docker-compose.frontend.yml 생성
     cat > docker-compose.frontend.yml <<'EOF'
-version: '3.8'
 
 services:
   frontend:
@@ -256,8 +254,6 @@ deploy_backend() {
 
     # docker-compose.backend.yml 생성
     cat > docker-compose.backend.yml <<'EOF'
-version: '3.8'
-
 services:
   backend:
     build:
@@ -272,9 +268,6 @@ services:
     restart: always
     networks:
       - triplan-network
-    depends_on:
-      - postgres
-      - redis
 
 networks:
   triplan-network:
@@ -298,8 +291,6 @@ deploy_websocket() {
 
     # docker-compose.websocket.yml 생성
     cat > docker-compose.websocket.yml <<'EOF'
-version: '3.8'
-
 services:
   websocket:
     build:
@@ -314,8 +305,6 @@ services:
     restart: always
     networks:
       - triplan-network
-    depends_on:
-      - redis
 
 networks:
   triplan-network:
@@ -335,7 +324,6 @@ deploy_redis() {
 
     # docker-compose.redis.yml 생성
     cat > docker-compose.redis.yml <<'EOF'
-version: '3.8'
 
 services:
   redis:
@@ -371,7 +359,6 @@ deploy_postgres() {
 
     # docker-compose.postgres.yml 생성
     cat > docker-compose.postgres.yml <<'EOF'
-version: '3.8'
 
 services:
   postgres:
@@ -416,7 +403,6 @@ deploy_airflow() {
 
     # docker-compose.airflow.yml 생성
     cat > docker-compose.airflow.yml <<'EOF'
-version: '3.8'
 
 services:
   airflow:
@@ -435,9 +421,6 @@ services:
     restart: always
     networks:
       - triplan-network
-    depends_on:
-      - postgres
-      - redis
 
 networks:
   triplan-network:
