@@ -398,8 +398,12 @@ EOF
 deploy_airflow() {
     print_step "Airflow 인스턴스 배포 중..."
 
-    # Airflow 디렉토리 생성
+    # Airflow 디렉토리 생성 및 권한 설정
+    print_step "Airflow 디렉토리 설정 중..."
     mkdir -p airflow/dags airflow/logs airflow/plugins
+
+    # Airflow가 사용할 로그 디렉토리 권한 설정 (UID 50000은 Airflow 기본 사용자)
+    sudo chown -R 50000:50000 airflow/logs 2>/dev/null || chmod -R 777 airflow/logs
 
     # docker-compose.airflow.yml 생성
     cat > docker-compose.airflow.yml <<'EOF'
@@ -418,6 +422,11 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
+    user: "50000:0"
     restart: always
     networks:
       - triplan-network
@@ -428,21 +437,33 @@ networks:
 EOF
 
     # 빌드 및 실행
+    print_step "Airflow 컨테이너 시작 중..."
     sudo docker-compose -f docker-compose.airflow.yml up -d --build
 
-    # Airflow 초기화
+    # 컨테이너가 완전히 시작될 때까지 대기
+    print_step "Airflow 시작 대기 중..."
+    sleep 10
+
+    # Airflow 초기화 (DB 및 사용자 생성)
     print_step "Airflow 초기화 중..."
-    sudo docker-compose -f docker-compose.airflow.yml exec airflow airflow db init
-    sudo docker-compose -f docker-compose.airflow.yml exec airflow airflow users create \
+
+    # DB 초기화
+    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow airflow db init 2>/dev/null || \
+        print_warning "Airflow DB는 이미 초기화되어 있습니다."
+
+    # Admin 사용자 생성 (이미 존재하면 스킵)
+    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow airflow users create \
         --username ${AIRFLOW_USERNAME:-admin} \
         --password ${AIRFLOW_PASSWORD:-admin} \
         --firstname Admin \
         --lastname User \
         --role Admin \
-        --email admin@example.com
+        --email admin@example.com 2>/dev/null || \
+        print_warning "Airflow admin 사용자는 이미 존재합니다."
 
     print_success "Airflow 배포 완료"
     print_success "Airflow 웹 UI: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8080"
+    print_success "로그인: admin / ${AIRFLOW_PASSWORD:-admin}"
 }
 
 # 배포 후 상태 확인
