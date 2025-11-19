@@ -98,7 +98,6 @@ class TripCourseEmbedding(models.Model):
     url = models.TextField(null=True, blank=True)
 
     # Location info - FK to existing tables
-    country_name = models.CharField(max_length=100, null=True, blank=True)  # Denormalized for search
     country_code = models.ForeignKey(
         'common.Country',
         on_delete=models.SET_NULL,
@@ -185,8 +184,21 @@ class TripCourseEmbedding(models.Model):
             models.Index(fields=['-views_num']),
         ]
 
+    @property
+    def location_name(self):
+        """FK에서 지역명 가져오기 (우선순위: District > City > Province > Country)"""
+        if self.district_idx:
+            return self.district_idx.name
+        elif self.city_idx:
+            return self.city_idx.name
+        elif self.province_idx:
+            return self.province_idx.name
+        elif self.country_code:
+            return self.country_code.country_name
+        return "알 수 없음"
+
     def __str__(self):
-        location = f"{self.country_name}"
-        if self.province_idx:
-            location += f" - {self.province_idx.name}"
+        location = self.location_name
+        if self.province_idx and self.city_idx:
+            location = f"{self.province_idx.name} {self.city_idx.name}"
         return f"{self.title} ({location})"

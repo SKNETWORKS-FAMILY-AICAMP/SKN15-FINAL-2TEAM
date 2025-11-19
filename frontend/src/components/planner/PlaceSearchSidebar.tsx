@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   Drawer,
   Box,
@@ -30,17 +30,31 @@ interface PlaceSearchSidebarProps {
   selectedDay?: number;
 }
 
-export default function PlaceSearchSidebar({
+export interface PlaceSearchSidebarRef {
+  focusSearchInput: () => void;
+}
+
+const PlaceSearchSidebar = forwardRef<PlaceSearchSidebarRef, PlaceSearchSidebarProps>(({
   open,
   onClose,
   onPlaceAdd,
   selectedDay,
-}: PlaceSearchSidebarProps) {
+}, ref) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(false);
   const [addTime, setAddTime] = useState('09:00');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // 부모 컴포넌트에서 호출할 수 있는 함수 노출
+  useImperativeHandle(ref, () => ({
+    focusSearchInput: () => {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    },
+  }));
 
   // 검색 실행
   const handleSearch = async () => {
@@ -114,20 +128,28 @@ export default function PlaceSearchSidebar({
           </IconButton>
         </Box>
 
-        {/* Day 표시 */}
-        {selectedDay && (
-          <Box
-            sx={{
-              p: 1.5,
-              bgcolor: '#e3f2fd',
-              borderBottom: '1px solid #ddd',
-            }}
-          >
+        {/* Day 표시 - 고정 영역 */}
+        <Box
+          sx={{
+            py: 1,
+            px: 1.5,
+            bgcolor: selectedDay ? '#e3f2fd' : 'transparent',
+            borderBottom: '1px solid #ddd',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {selectedDay ? (
             <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
               📅 Day {selectedDay}에 추가
             </Typography>
-          </Box>
-        )}
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.875rem' }}>
+              Day를 선택하면 일정에 추가할 수 있습니다
+            </Typography>
+          )}
+        </Box>
 
         {/* 검색창 */}
         <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
@@ -137,6 +159,7 @@ export default function PlaceSearchSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
+            inputRef={searchInputRef}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -359,4 +382,8 @@ export default function PlaceSearchSidebar({
       </Box>
     </Drawer>
   );
-}
+});
+
+PlaceSearchSidebar.displayName = 'PlaceSearchSidebar';
+
+export default PlaceSearchSidebar;

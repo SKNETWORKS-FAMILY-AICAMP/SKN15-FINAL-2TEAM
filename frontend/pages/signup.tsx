@@ -98,7 +98,7 @@ export default function Signup() {
               cursor: 'pointer',
             }}
           >
-            🌍 Triplan
+            Triplan
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button

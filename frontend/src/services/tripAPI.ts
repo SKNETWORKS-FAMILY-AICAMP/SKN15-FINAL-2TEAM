@@ -8,9 +8,11 @@ export interface TripPlan {
   country_idx?: number;
   province_idx?: number;
   city_idx?: number;
+  district_idx?: number;
   country_name?: string;
   province_name?: string;
   city_name?: string;
+  district_name?: string;
   start_date: string;
   end_date: string;
   party_size?: number;
@@ -177,6 +179,11 @@ const tripAPI = {
   // Delete trip item
   deleteItem: async (itemId: number): Promise<void> => {
     await api.delete(`/api/plans/items/${itemId}/`);
+  },
+
+  // Delete all items in a day
+  deleteAllItemsInDay: async (dayIdx: number): Promise<void> => {
+    await api.delete(`/api/plans/days/${dayIdx}/delete_all_items/`);
   },
 
   // Generate invite code for trip

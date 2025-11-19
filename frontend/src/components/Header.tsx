@@ -43,21 +43,6 @@ export default function Header() {
               Triplan
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Button
-                onClick={() => router.push('/places')}
-                variant="text"
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  color: '#333',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                여행지
-              </Button>
               <Button variant="outlined" color="primary" disabled>
                 로딩중...
               </Button>
@@ -87,21 +72,6 @@ export default function Header() {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Button
-              onClick={() => router.push('/places')}
-              variant="text"
-              sx={{
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 500,
-                color: '#333',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.04)',
-                }
-              }}
-            >
-              여행지
-            </Button>
             {isAuthenticated ? (
               <>
                 <Button

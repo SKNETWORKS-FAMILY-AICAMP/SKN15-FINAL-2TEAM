@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import ChatRoom, ChatMessage
 from .serializers import ChatRoomSerializer, ChatMessageSerializer
+from apps.ai.rag import get_rag
 
 
 class ChatRoomViewSet(viewsets.ModelViewSet):
@@ -69,3 +70,59 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         room, created = ChatRoom.objects.get_or_create(trip_idx=trip)
         serializer = self.get_serializer(room)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def rag_test(request):
+    """
+    RAG 테스트 엔드포인트 (관리자 대시보드용)
+
+    Request body:
+    {
+        "query": "곡성 일정 추천",
+        "top_k": 3
+    }
+
+    Response:
+    {
+        "results": [
+            {
+                "title": "...",
+                "similarity_score": 0.87,
+                "schedules": [...],
+                "channel": "...",
+                "location": "..."
+            }
+        ]
+    }
+    """
+    query = request.data.get('query', '')
+    top_k = request.data.get('top_k', 3)
+
+    if not query:
+        return Response(
+            {'error': 'query is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        rag = get_rag()
+        results = rag.search_similar_trips(query=query, limit=top_k)
+
+        return Response({
+            'success': True,
+            'query': query,
+            'count': len(results),
+            'results': results
+        })
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"RAG test failed: {e}", exc_info=True)
+
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

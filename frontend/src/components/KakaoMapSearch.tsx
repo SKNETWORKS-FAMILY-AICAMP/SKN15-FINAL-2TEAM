@@ -72,6 +72,9 @@ interface ScheduleItem {
     time: string;
     distance: string;
   };
+  // RAG/Kakao에서 가져온 좌표 (마커 표시용)
+  latitude?: number;
+  longitude?: number;
 }
 
 // Trip data structure
@@ -92,6 +95,7 @@ interface KakaoMapSearchProps {
 // Ref methods
 export interface KakaoMapSearchHandle {
   search: (keyword: string) => void;
+  focusSearchInput: () => void;
 }
 
 const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((props, ref) => {
@@ -115,6 +119,19 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
   const [ps, setPs] = useState<any>(null); // Places Service
 
   const mapRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const polylinesRef = useRef<any[]>([]); // Day별 경로선 (ref로 관리)
+
+  // Day별 색상 정의 (최대 7일까지 다른 색상)
+  const dayColors = [
+    '#FF6B6B', // Day 1: 빨강
+    '#4ECDC4', // Day 2: 청록
+    '#45B7D1', // Day 3: 하늘색
+    '#FFA07A', // Day 4: 연한 주황
+    '#98D8C8', // Day 5: 민트
+    '#F7B731', // Day 6: 노랑
+    '#5F27CD', // Day 7: 보라
+  ];
 
   // 카카오맵 초기화
   useEffect(() => {
@@ -278,54 +295,198 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
 
   // 일정(tripData)의 장소들을 지도에 마커로 표시
   useEffect(() => {
-    if (!ps || !map || !tripData || Object.keys(tripData).length === 0) return;
+    if (!ps || !map || !tripData) return;
 
     console.log('📍 일정 장소 마커 표시:', tripData, 'selectedDayNo:', selectedDayNo);
 
     // 기존 일정 마커 제거
     scheduleMarkers.forEach((item: any) => {
       if (item.marker) item.marker.setMap(null);
+      if (item.label) item.label.setMap(null);
       if (item.infowindow) item.infowindow.close();
     });
     const newScheduleMarkers: any[] = [];
+
+    // tripData가 비어있으면 마커만 제거하고 종료
+    if (Object.keys(tripData).length === 0) {
+      console.log('📍 tripData가 비어있음 - 모든 일정 마커 제거');
+      setScheduleMarkers([]);
+      // Polyline도 제거
+      polylinesRef.current.forEach(item => {
+        if (item && typeof item.setMap === 'function') {
+          item.setMap(null);
+        }
+      });
+      polylinesRef.current = [];
+      return;
+    }
     const bounds = new window.kakao.maps.LatLngBounds(); // 모든 마커를 포함하는 영역
 
     // tripData가 변경되었는지 확인 (selectedDayNo 변경만으로는 범위 조정 안 함)
     const shouldAdjustBounds = scheduleMarkers.length === 0 ||
       Object.keys(tripData).length !== scheduleMarkers.length;
 
-    // Day별 색상 정의 (최대 7일까지 다른 색상)
-    const dayColors = [
-      '#FF6B6B', // Day 1: 빨강
-      '#4ECDC4', // Day 2: 청록
-      '#45B7D1', // Day 3: 하늘색
-      '#FFA07A', // Day 4: 연한 주황
-      '#98D8C8', // Day 5: 민트
-      '#F7B731', // Day 6: 노랑
-      '#5F27CD', // Day 7: 보라
-    ];
-
     // 모든 Day의 일정 수집
     const allPlaces: { dayNo: number; schedule: ScheduleItem; index: number }[] = [];
+    console.log('🔍 tripData 키들:', Object.keys(tripData));
     Object.keys(tripData).forEach(dayNoStr => {
       const dayNo = parseInt(dayNoStr);
       const schedules = tripData[dayNo];
+      console.log(`🔍 dayNoStr: "${dayNoStr}", parsed dayNo: ${dayNo}, schedules:`, schedules);
       if (schedules && Array.isArray(schedules)) {
         schedules.forEach((schedule, index) => {
           if (schedule.location) {
+            console.log(`  ➡️ Day ${dayNo} 장소 추가: ${schedule.location}`);
             allPlaces.push({ dayNo, schedule, index });
           }
         });
       }
     });
 
-    console.log(`📍 총 ${allPlaces.length}개 장소 마커 표시 예정, 범위 조정: ${shouldAdjustBounds}`);
+    console.log(`📍 총 ${allPlaces.length}개 장소 마커 표시 예정, 범위 조정: ${shouldAdjustBounds}`, allPlaces);
 
     let markersCreated = 0;
     const totalMarkers = allPlaces.length;
 
-    // 각 장소를 검색하고 마커 표시
+    // 각 장소를 검색하고 마커 표시 (또는 좌표가 있으면 바로 마커 표시)
     allPlaces.forEach(({ dayNo, schedule, index }) => {
+      // 🆕 좌표가 이미 있으면 검색 없이 바로 마커 생성
+      if (schedule.latitude && schedule.longitude) {
+        console.log(`✅ Day ${dayNo} "${schedule.location}" 좌표 사용 (검색 생략):`, schedule.latitude, schedule.longitude);
+
+        const markerPosition = new window.kakao.maps.LatLng(
+          schedule.latitude,
+          schedule.longitude
+        );
+
+        // bounds에 마커 위치 추가
+        bounds.extend(markerPosition);
+
+        // Day별 색상 선택
+        const dayColor = selectedDayNo === dayNo
+          ? '#1976d2'
+          : dayColors[(dayNo - 1) % dayColors.length];
+
+        console.log(`🎨 Day ${dayNo} 색상: ${dayColor}, 선택된 Day: ${selectedDayNo}`);
+
+        // 고유 ID 생성
+        const markerId = `schedule-marker-${dayNo}-${index}`;
+
+        const markerContent = `
+          <div id="${markerId}" style="
+            position: relative;
+            width: 36px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+          ">
+            <svg width="36" height="48" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30c0-9.941-8.059-18-18-18z"
+                    fill="${dayColor}"
+                    stroke="white"
+                    stroke-width="2"/>
+              <circle cx="18" cy="18" r="8" fill="white"/>
+            </svg>
+            <div style="
+              position: absolute;
+              top: 10px;
+              left: 50%;
+              transform: translateX(-50%);
+              color: ${dayColor};
+              font-weight: bold;
+              font-size: 12px;
+              text-shadow: 0 0 2px white;
+              pointer-events: none;
+            ">
+              ${dayNo}
+            </div>
+          </div>
+        `;
+
+        const marker = new window.kakao.maps.CustomOverlay({
+          position: markerPosition,
+          content: markerContent,
+          yAnchor: 1,
+          zIndex: 2,
+        });
+
+        marker.setMap(map);
+
+        // 마커 위에 장소명 라벨 추가
+        const labelContent = `
+          <div style="
+            padding: 4px 8px;
+            background-color: white;
+            border: 1px solid ${dayColor};
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #333;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transform: translateY(-60px);
+          ">
+            ${schedule.location}
+          </div>
+        `;
+
+        const label = new window.kakao.maps.CustomOverlay({
+          position: markerPosition,
+          content: labelContent,
+          yAnchor: 1,
+          zIndex: 1,
+        });
+
+        label.setMap(map);
+
+        // 인포윈도우 생성
+        const infowindow = new window.kakao.maps.InfoWindow({
+          position: markerPosition,
+          content: `
+            <div style="padding:10px;font-size:12px;min-width:150px;">
+              <strong style="color: ${dayColor};">Day ${dayNo}</strong> - ${schedule.time}<br/>
+              📍 ${schedule.location}<br/>
+              <small>${schedule.description || ''}</small>
+            </div>
+          `,
+        });
+
+        // 마커가 지도에 추가된 후 클릭 이벤트 추가
+        setTimeout(() => {
+          const markerElement = document.getElementById(markerId);
+          if (markerElement) {
+            markerElement.addEventListener('click', () => {
+              infowindow.open(map);
+              map.setCenter(markerPosition);
+              map.setLevel(4);
+            });
+          }
+        }, 100);
+
+        newScheduleMarkers.push({ marker, label, infowindow, position: markerPosition, dayNo });
+        markersCreated++;
+
+        // 모든 마커가 생성되면 지도 범위 조정 및 Polyline 그리기
+        if (markersCreated === totalMarkers) {
+          console.log('📍 모든 마커 생성 완료, 전체 범위로 지도 조정');
+
+          if (shouldAdjustBounds && !bounds.isEmpty()) {
+            map.setBounds(bounds);
+            setTimeout(() => {
+              const currentLevel = map.getLevel();
+              map.setLevel(currentLevel + 1);
+            }, 100);
+          }
+
+          drawPolylines(newScheduleMarkers);
+        }
+
+        return; // 좌표가 있으면 검색 건너뛰기
+      }
+
+      // 좌표가 없으면 Kakao 검색 수행
       ps.keywordSearch(schedule.location, (data: KakaoPlace[], status: any) => {
         if (status === window.kakao.maps.services.Status.OK && data.length > 0) {
           const place = data[0]; // 첫 번째 결과 사용
@@ -393,6 +554,33 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
 
           marker.setMap(map);
 
+          // 마커 위에 장소명 라벨 추가
+          const labelContent = `
+            <div style="
+              padding: 4px 8px;
+              background-color: white;
+              border: 1px solid ${dayColor};
+              border-radius: 4px;
+              font-size: 11px;
+              font-weight: 500;
+              color: #333;
+              white-space: nowrap;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+              transform: translateY(-60px);
+            ">
+              ${place.place_name}
+            </div>
+          `;
+
+          const label = new window.kakao.maps.CustomOverlay({
+            position: markerPosition,
+            content: labelContent,
+            yAnchor: 1,
+            zIndex: 1,
+          });
+
+          label.setMap(map);
+
           // 인포윈도우 생성
           const infowindow = new window.kakao.maps.InfoWindow({
             position: markerPosition,
@@ -417,85 +605,41 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
             }
           }, 100);
 
-          newScheduleMarkers.push({ marker, infowindow, position: markerPosition, dayNo });
+          newScheduleMarkers.push({ marker, label, infowindow, position: markerPosition, dayNo });
           markersCreated++;
 
-          // 모든 마커가 생성되면 지도 범위 조정
+          // 모든 마커가 생성되면 지도 범위 조정 및 Polyline 그리기
           if (markersCreated === totalMarkers) {
-            console.log('📍 모든 마커 생성 완료, 지도 범위 조정');
+            console.log('📍 모든 마커 생성 완료, 전체 범위로 지도 조정');
 
-            // selectedDayNo가 있으면 해당 Day만, 없으면 전체 표시
-            if (selectedDayNo) {
-              console.log(`🔍 Day ${selectedDayNo}의 마커만 표시`);
-              const selectedDayBounds = new window.kakao.maps.LatLngBounds();
-              let selectedDayMarkerCount = 0;
-
-              newScheduleMarkers.forEach((item: any) => {
-                if (item.dayNo === selectedDayNo && item.position) {
-                  selectedDayBounds.extend(item.position);
-                  selectedDayMarkerCount++;
-                }
-              });
-
-              if (!selectedDayBounds.isEmpty()) {
-                map.setBounds(selectedDayBounds);
-                setTimeout(() => {
-                  const currentLevel = map.getLevel();
-                  // 마커가 1개면 적당히 줌인, 여러 개면 약간의 여유
-                  if (selectedDayMarkerCount === 1) {
-                    map.setLevel(4);
-                  } else {
-                    map.setLevel(currentLevel + 1);
-                  }
-                }, 100);
-              }
-            } else if (shouldAdjustBounds) {
-              // Day가 선택되지 않았고 첫 로드나 일정 변경 시: 전체 마커 표시
-              console.log('📍 전체 마커 표시');
-              if (!bounds.isEmpty()) {
-                map.setBounds(bounds);
-                setTimeout(() => {
-                  const currentLevel = map.getLevel();
-                  map.setLevel(currentLevel + 1);
-                }, 100);
-              }
-            }
-          }
-        } else {
-          console.warn(`⚠️ Day ${dayNo} "${schedule.location}" 검색 결과 없음`);
-          markersCreated++;
-
-          // 검색 실패한 경우에도 카운트해서 범위 조정
-          if (markersCreated === totalMarkers) {
-            if (selectedDayNo) {
-              const selectedDayBounds = new window.kakao.maps.LatLngBounds();
-              let selectedDayMarkerCount = 0;
-
-              newScheduleMarkers.forEach((item: any) => {
-                if (item.dayNo === selectedDayNo && item.position) {
-                  selectedDayBounds.extend(item.position);
-                  selectedDayMarkerCount++;
-                }
-              });
-
-              if (!selectedDayBounds.isEmpty()) {
-                map.setBounds(selectedDayBounds);
-                setTimeout(() => {
-                  const currentLevel = map.getLevel();
-                  if (selectedDayMarkerCount === 1) {
-                    map.setLevel(4);
-                  } else {
-                    map.setLevel(currentLevel + 1);
-                  }
-                }, 100);
-              }
-            } else if (shouldAdjustBounds && !bounds.isEmpty()) {
+            // 지도 범위 조정 (첫 로드 또는 일정 변경 시에만)
+            if (shouldAdjustBounds && !bounds.isEmpty()) {
               map.setBounds(bounds);
               setTimeout(() => {
                 const currentLevel = map.getLevel();
                 map.setLevel(currentLevel + 1);
               }, 100);
             }
+
+            // Polyline 그리기
+            drawPolylines(newScheduleMarkers);
+          }
+        } else {
+          console.warn(`⚠️ Day ${dayNo} "${schedule.location}" 검색 결과 없음`);
+          markersCreated++;
+
+          // 검색 실패한 경우에도 카운트해서 범위 조정 및 Polyline 그리기
+          if (markersCreated === totalMarkers) {
+            if (shouldAdjustBounds && !bounds.isEmpty()) {
+              map.setBounds(bounds);
+              setTimeout(() => {
+                const currentLevel = map.getLevel();
+                map.setLevel(currentLevel + 1);
+              }, 100);
+            }
+
+            // Polyline 그리기
+            drawPolylines(newScheduleMarkers);
           }
         }
       });
@@ -503,6 +647,108 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
 
     setScheduleMarkers(newScheduleMarkers);
   }, [tripData, ps, map, selectedDayNo]);
+
+  // ===== Polyline 그리기 함수 =====
+  const drawPolylines = (markers: any[]) => {
+    if (!map) return;
+
+    console.log('🛣️ drawPolylines 호출됨, 마커 개수:', markers.length);
+
+    // 기존 polyline 제거
+    polylinesRef.current.forEach(item => {
+      if (item && typeof item.setMap === 'function') {
+        item.setMap(null);
+      }
+    });
+    polylinesRef.current = [];
+
+    // Day별로 그룹화하여 Polyline 생성
+    const dayGroups: { [dayNo: number]: any[] } = {};
+    markers.forEach(markerData => {
+      if (!dayGroups[markerData.dayNo]) {
+        dayGroups[markerData.dayNo] = [];
+      }
+      dayGroups[markerData.dayNo].push(markerData);
+    });
+
+    console.log('📊 Day별 그룹:', Object.keys(dayGroups).map(k => `Day ${k}: ${dayGroups[parseInt(k)].length}개`).join(', '));
+
+    Object.keys(dayGroups).forEach(dayNoStr => {
+      const dayNo = parseInt(dayNoStr);
+      const dayMarkers = dayGroups[dayNo];
+
+      if (dayMarkers.length < 2) {
+        console.log(`⚠️ Day ${dayNo}: 마커가 ${dayMarkers.length}개라서 선 그리기 스킵`);
+        return; // 마커가 2개 미만이면 선을 그릴 수 없음
+      }
+
+      // 마커들의 좌표 추출
+      const path = dayMarkers.map((m: any) => m.position);
+
+      // Day별 색상 (마커와 동일)
+      const dayColor = selectedDayNo === dayNo
+        ? '#1976d2'
+        : dayColors[(dayNo - 1) % dayColors.length];
+
+      console.log(`🛣️ Day ${dayNo} Polyline 생성: ${dayMarkers.length}개 지점, 색상: ${dayColor}`);
+
+      // Polyline 생성
+      const polyline = new window.kakao.maps.Polyline({
+        path: path,
+        strokeWeight: 4,
+        strokeColor: dayColor,
+        strokeOpacity: 0.7,
+        strokeStyle: 'solid',
+        zIndex: 1,
+      });
+
+      polyline.setMap(map);
+      polylinesRef.current.push(polyline);
+
+      console.log(`✅ Day ${dayNo} Polyline 지도에 추가됨`);
+
+      // 화살표 표시 (각 선분의 중간에)
+      for (let i = 0; i < path.length - 1; i++) {
+        const start = path[i];
+        const end = path[i + 1];
+
+        // 중간 지점 계산
+        const midLat = (start.getLat() + end.getLat()) / 2;
+        const midLng = (start.getLng() + end.getLng()) / 2;
+        const midPosition = new window.kakao.maps.LatLng(midLat, midLng);
+
+        // 방향 계산 (라디안)
+        const angle = Math.atan2(
+          end.getLat() - start.getLat(),
+          end.getLng() - start.getLng()
+        ) * (180 / Math.PI);
+
+        // 화살표 아이콘 생성
+        const arrowContent = `
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 12px solid ${dayColor};
+            transform: rotate(${angle + 90}deg);
+            opacity: 0.8;
+          "></div>
+        `;
+
+        const arrowOverlay = new window.kakao.maps.CustomOverlay({
+          position: midPosition,
+          content: arrowContent,
+          zIndex: 2,
+        });
+
+        arrowOverlay.setMap(map);
+        polylinesRef.current.push(arrowOverlay);
+      }
+    });
+
+    console.log(`✅ 총 ${polylinesRef.current.length}개 polyline/arrow 생성됨`);
+  };
 
   // Kakao Place를 우리 Place 형식으로 변환
   const convertKakaoPlaceToPlace = (kakaoPlace: KakaoPlace): Place => {
@@ -558,13 +804,40 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
             map: map,
           });
 
+          // 마커 위에 장소명 라벨 추가
+          const labelContent = `
+            <div style="
+              padding: 4px 8px;
+              background-color: white;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 11px;
+              font-weight: 500;
+              color: #333;
+              white-space: nowrap;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              transform: translateY(-45px);
+            ">
+              ${place.place_name}
+            </div>
+          `;
+
+          const label = new window.kakao.maps.CustomOverlay({
+            position: markerPosition,
+            content: labelContent,
+            yAnchor: 1,
+            zIndex: 1,
+          });
+
+          label.setMap(map);
+
           // 마커 클릭 이벤트
           const convertedPlace = convertKakaoPlaceToPlace(place);
           window.kakao.maps.event.addListener(marker, 'click', () => {
             handlePlaceClick(convertedPlace);
           });
 
-          return { marker };
+          return { marker, label };
         });
 
         setMarkers(newMarkers);
@@ -657,12 +930,39 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
                 map: map,
               });
 
+              // 마커 위에 장소명 라벨 추가
+              const labelContent = `
+                <div style="
+                  padding: 4px 8px;
+                  background-color: white;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  font-size: 11px;
+                  font-weight: 500;
+                  color: #333;
+                  white-space: nowrap;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  transform: translateY(-45px);
+                ">
+                  ${place.place_name}
+                </div>
+              `;
+
+              const label = new window.kakao.maps.CustomOverlay({
+                position: markerPosition,
+                content: labelContent,
+                yAnchor: 1,
+                zIndex: 1,
+              });
+
+              label.setMap(map);
+
               const convertedPlace = convertKakaoPlaceToPlace(place);
               window.kakao.maps.event.addListener(marker, 'click', () => {
                 handlePlaceClick(convertedPlace);
               });
 
-              return { marker };
+              return { marker, label };
             });
 
             setMarkers(newMarkers);
@@ -689,7 +989,12 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
           }
         });
       }, 100);
-    }
+    },
+    focusSearchInput: () => {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    },
   }));
 
   return (
@@ -713,6 +1018,7 @@ const KakaoMapSearch = forwardRef<KakaoMapSearchHandle, KakaoMapSearchProps>((pr
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
+            inputRef={searchInputRef}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

@@ -23,6 +23,8 @@ django-allauth==0.59.0
 
 # AI & ML
 langchain==0.1.0
+langchain-community==0.0.20
+langchain-core==0.1.23
 langchain-openai==0.0.2
 langgraph==0.0.20
 openai==1.7.2
@@ -41,6 +43,10 @@ pandas==2.1.4
 requests==2.31.0
 httpx==0.26.0
 beautifulsoup4==4.12.3
+
+# YouTube Data Extraction
+yt-dlp==2025.11.12
+youtube-transcript-api==1.2.3
 
 # File Processing
 Pillow==10.2.0

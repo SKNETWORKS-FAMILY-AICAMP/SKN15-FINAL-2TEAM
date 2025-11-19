@@ -3,7 +3,7 @@
 """
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, date
 import time
 from django.core.management.base import BaseCommand
 from apps.common.models import Country, District
@@ -25,12 +25,30 @@ class Command(BaseCommand):
             action='store_true',
             help='테스트 모드 (10개만 크롤링)'
         )
+        parser.add_argument(
+            '--incremental',
+            action='store_true',
+            help='증분 수집 모드 (오늘 날짜 이후 데이터만 수집)'
+        )
+        parser.add_argument(
+            '--full',
+            action='store_true',
+            help='전체 재수집 모드 (모든 날씨 데이터 재수집)'
+        )
 
     def handle(self, *args, **options):
         limit = 10 if options['test'] else options['limit']
+        incremental = options.get('incremental', False)
+        full_mode = options.get('full', False)
 
         self.stdout.write("=" * 80)
-        self.stdout.write(self.style.SUCCESS("🌤️  기상청 일별 예보 크롤링 시작"))
+        if incremental:
+            self.stdout.write(self.style.SUCCESS("🌤️  기상청 일별 예보 크롤링 시작 (증분 수집 모드)"))
+            self.stdout.write(self.style.WARNING("📅 오늘 날짜 이후 데이터만 수집합니다"))
+        elif full_mode:
+            self.stdout.write(self.style.SUCCESS("🌤️  기상청 일별 예보 크롤링 시작 (전체 재수집 모드)"))
+        else:
+            self.stdout.write(self.style.SUCCESS("🌤️  기상청 일별 예보 크롤링 시작"))
         self.stdout.write("=" * 80)
 
         # 한국의 모든 District 가져오기
@@ -71,9 +89,17 @@ class Command(BaseCommand):
                 fail_count += 1
                 continue
 
+            # 증분 모드: 오늘 이후 데이터만 필터링
+            if incremental:
+                today = date.today()
+                forecasts = [f for f in forecasts if f['forecast_date'] >= today]
+                if not forecasts:
+                    self.stdout.write("  ℹ️  오늘 이후 데이터 없음 (스킵)")
+                    continue
+
             # DB 저장
-            self.save_to_db(district, forecasts)
-            self.stdout.write(self.style.SUCCESS(f"  ✅ {len(forecasts)}일치 예보 저장 완료"))
+            saved_count = self.save_to_db(district, forecasts)
+            self.stdout.write(self.style.SUCCESS(f"  ✅ {saved_count}일치 예보 저장 완료"))
             success_count += 1
 
             # Rate limiting
@@ -221,10 +247,11 @@ class Command(BaseCommand):
     def save_to_db(self, district, forecasts):
         """일별 예보 데이터를 DB에 저장"""
         korea = Country.objects.get(iso2='KR')
+        saved_count = 0
 
         for forecast in forecasts:
             try:
-                WeatherDaily.objects.update_or_create(
+                obj, created = WeatherDaily.objects.update_or_create(
                     district_idx=district,
                     forecast_date=forecast['forecast_date'],
                     defaults={
@@ -239,5 +266,8 @@ class Command(BaseCommand):
                         'precipitation_pm': forecast['precipitation_pm'],
                     }
                 )
+                saved_count += 1
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"  ❌ Failed to save: {e}"))
+
+        return saved_count

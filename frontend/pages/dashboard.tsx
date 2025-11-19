@@ -40,6 +40,10 @@ import {
 import { useAuth } from '../src/hooks/useAuth';
 import api from '../src/services/api';
 import YouTubeCrawler from '../src/components/admin/YouTubeCrawler';
+import TripManagement from '../src/components/admin/TripManagement';
+import RAGTester from '../src/components/admin/RAGTester';
+import BotPerformanceMonitor from '../src/components/admin/BotPerformanceMonitor';
+import RAGSystemTester from '../src/components/admin/RAGSystemTester';
 
 interface AdminStats {
   success: boolean;
@@ -180,6 +184,10 @@ export default function AdminPage() {
           <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
             <Tab label="📊 통계 대시보드" />
             <Tab label="🎬 YouTube 크롤러" />
+            <Tab label="✈️ 여행 계획 관리" />
+            <Tab label="🚀 RAG 테스트" />
+            <Tab label="⏱️ 봇 응답시간" />
+            <Tab label="🧪 RAG 시스템 테스트" />
           </Tabs>
         </Container>
       </Box>
@@ -488,6 +496,26 @@ export default function AdminPage() {
         {/* Tab 1: YouTube 크롤러 */}
         {currentTab === 1 && (
           <YouTubeCrawler />
+        )}
+
+        {/* Tab 2: 여행 계획 관리 */}
+        {currentTab === 2 && (
+          <TripManagement />
+        )}
+
+        {/* Tab 3: RAG 테스트 */}
+        {currentTab === 3 && (
+          <RAGTester />
+        )}
+
+        {/* Tab 4: 봇 응답시간 */}
+        {currentTab === 4 && (
+          <BotPerformanceMonitor />
+        )}
+
+        {/* Tab 5: RAG 시스템 테스트 */}
+        {currentTab === 5 && (
+          <RAGSystemTester />
         )}
       </Container>
     </Box>

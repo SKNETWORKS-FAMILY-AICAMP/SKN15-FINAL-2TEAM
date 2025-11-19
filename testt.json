@@ -1,0 +1,43 @@
+{
+    "title": "곡성 여행가면 가볼만한 여행지 7곳을 추천합니다.",
+    "places": [
+        {
+            "name": "곡성 기차마을",
+            "type": "place",
+            "order": 1,
+            "description": "곡성 기차마을"
+        },
+        {
+            "name": "섬진강 기차마을 레일바이크",
+            "type": "activity",
+            "order": 2,
+            "description": "섬진강 기차마을 레일바이크"
+        },
+        {
+            "name": "세계장미축제 (곡성세계장미공원)",
+            "type": "place",
+            "order": 3,
+            "description": "세계장미축제 (곡성세계장미공원)"
+        },
+        {
+            "name": "압록유원지",
+            "type": "place",
+            "order": 4,
+            "description": "압록유원지"
+        },
+        {
+            "name": "도림사와 동악산",
+            "type": "place",
+            "order": 5,
+            "description": "도림사와 동악산"
+        },
+        {
+            "name": "가정역과 증기기관차",
+            "type": "place",
+            "order": 6,
+            "description": "가정역과 증기기관차"
+        }
+    ],
+    "summary": "전라남도 곡성군에서 다양한 볼꺼리들이 있는 여행지를 추천합니다. 자연과 전통이 어우러진 곡성은 힐링과 여유를 찾는 이들에게 적합한 장소입니다.",
+    "location": "곡성"
+}

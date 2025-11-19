@@ -76,7 +76,7 @@ def run_youtube_crawler_task(job_idx: int, file_path: str):
                 location_match = match_location(location)
 
                 # RAG 데이터 저장 (trip_course_embeddings)
-                embedding_id = save_to_database(parsed_data, location_match, video_info, url)
+                embedding_id = save_to_database(parsed_data, location_match, video_info, url, location)
 
                 if embedding_id:
                     success_count += 1
@@ -110,39 +110,42 @@ def run_youtube_crawler_task(job_idx: int, file_path: str):
 
 
 def read_youtube_urls(file_path: str):
-    """data.txt에서 YouTube URL 목록 읽기"""
+    """
+    data.txt에서 YouTube URL 목록 읽기
+
+    형식 (하나의 파일에 하나의 지역):
+    지역명
+
+    https://youtube.com/...
+
+    https://youtube.com/...
+
+    https://youtube.com/...
+    """
     urls_data = []
+    location = None
+
     with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('-') or line.startswith('#'):
-                continue
+        lines = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
 
-            # URL 추출 (맨 뒤에 있음)
-            url_match = re.search(r'(https?://[^\s]+)', line)
-            if not url_match:
-                continue
+        if not lines:
+            return urls_data
 
-            url = url_match.group(1)
+        # 첫 번째 줄이 지역명
+        location = lines[0]
 
-            # URL 앞부분에서 괄호들 추출
-            before_url = line[:url_match.start()].strip()
-
-            # 모든 괄호 내용 추출
-            brackets = re.findall(r'\(([^)]+)\)', before_url)
-
-            if not brackets:
-                continue
-
-            # 첫 번째 괄호는 위치, 나머지는 노트로 처리
-            location = brackets[0]
-            note = ' '.join(brackets[1:]) if len(brackets) > 1 else ''
-
-            urls_data.append({
-                'location': location,
-                'url': url,
-                'note': note
-            })
+        # 나머지 줄에서 YouTube URL 추출
+        for line in lines[1:]:
+            # YouTube URL인지 확인
+            if 'youtube.com' in line or 'youtu.be' in line:
+                url_match = re.search(r'(https?://[^\s]+)', line)
+                if url_match:
+                    url = url_match.group(1)
+                    urls_data.append({
+                        'location': location,
+                        'url': url,
+                        'note': ''
+                    })
 
     return urls_data
 
@@ -336,7 +339,7 @@ def match_location(location_name: str) -> Dict[str, Optional[int]]:
     return result
 
 
-def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, url: str):
+def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, url: str, location_name: str):
     """trip_course_embeddings 테이블에 저장 (RAG용) - 3단계 구조"""
     try:
         from openai import OpenAI
@@ -371,9 +374,10 @@ def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, 
         # 3단계: 임베딩 벡터 (content_embedding)
         # ========================================
         # 파싱된 데이터를 텍스트로 변환하여 임베딩
+        # 위치는 파일에서 읽은 location_name 사용 (검색 정확도 향상)
         embedding_text_parts = [
             f"제목: {parsed_data.get('title', '')}",
-            f"위치: {parsed_data.get('location', '')}",
+            f"위치: {location_name}",  # 파일에서 읽은 지역명 (예: "곡성")
             f"요약: {parsed_data.get('summary', '')}"
         ]
 
@@ -401,16 +405,12 @@ def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, 
         upload_year = upload_date.year if upload_date else None
         upload_month = upload_date.month if upload_date else None
 
-        # country_name은 parsed_data의 location에서 추출
-        country_name = parsed_data.get('location', '')
-
         # TripCourseEmbedding 저장 (3개 필드 모두 저장)
         embedding_obj = TripCourseEmbedding.objects.create(
             video_id=video_id,
             title=video_info.get('title', ''),
             channel=video_info.get('channel', ''),
             url=url,
-            country_name=country_name,
             upload_year=upload_year,
             upload_month=upload_month,
             views_num=video_info.get('view_count', 0),

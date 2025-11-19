@@ -23,7 +23,7 @@ import ScheduleModal from '../src/components/planner/ScheduleModal';
 import UnifiedChatWidget from '../src/components/planner/UnifiedChatWidget';
 import InviteCodeModal from '../src/components/planner/InviteCodeModal';
 import KakaoMapSearch, { KakaoMapSearchHandle } from '../src/components/KakaoMapSearch';
-import PlaceSearchSidebar from '../src/components/planner/PlaceSearchSidebar';
+import PlaceSearchSidebar, { PlaceSearchSidebarRef } from '../src/components/planner/PlaceSearchSidebar';
 import TravelInfoCard from '../src/components/planner/TravelInfoCard';
 import {
   ScheduleItem,
@@ -38,6 +38,7 @@ import weatherAPI, { WeatherDaily } from '../src/services/weatherAPI';
 import { useAuth } from '../src/hooks/useAuth';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import IconButton from '@mui/material/IconButton';
 import {
   savePlannerSession,
@@ -67,6 +68,7 @@ export default function Planner() {
   const [tripData, setTripData] = useState<TripData>({});
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [dayPlans, setDayPlans] = useState<DayPlan[]>([]);
+  const [dayIdxMap, setDayIdxMap] = useState<{ [dayNo: number]: number }>({});
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
   const [editingItem, setEditingItem] = useState<ScheduleItem | undefined>(undefined);
@@ -107,6 +109,7 @@ export default function Planner() {
   const [recommendationPanelExpanded, setRecommendationPanelExpanded] = useState(true); // 패널 확장 여부
   const [recommendationDetails, setRecommendationDetails] = useState<any[]>([]);
   const kakaoMapRef = useRef<KakaoMapSearchHandle>(null);
+  const placeSearchSidebarRef = useRef<PlaceSearchSidebarRef>(null);
 
   // 사용자 만족도
   const [userSatisfaction, setUserSatisfaction] = useState<'like' | 'dislike' | null>(null);
@@ -556,6 +559,12 @@ export default function Planner() {
         // Convert API data to tripData format
         const newTripData: TripData = {};
 
+        // Store day_idx mapping for later use
+        const dayIdxMap: { [dayNo: number]: number } = {};
+        daysData.forEach(day => {
+          dayIdxMap[day.day_no] = day.day_idx;
+        });
+
         // Load items for each day (don't pre-initialize to avoid reference sharing)
         for (const day of daysData) {
           try {
@@ -599,6 +608,7 @@ export default function Planner() {
         });
 
         setTripData(newTripData);
+        setDayIdxMap(dayIdxMap); // Store day_idx mapping
         setIsDirty(false); // 데이터 로드 후 dirty 플래그 초기화
       } else {
         // No days found - initialize empty tripData
@@ -633,6 +643,7 @@ export default function Planner() {
 
         days.push({
           dayNumber,
+          dayIdx: dayIdxMap[dayNumber] || 0, // Use stored day_idx or 0 if not found
           date: formatDateForDisplay(date),
           schedules: schedulesForDay,
         });
@@ -641,7 +652,7 @@ export default function Planner() {
       console.log('✅ Final dayPlans:', days);
       setDayPlans(days);
     }
-  }, [startDate, endDate, tripData]);
+  }, [startDate, endDate, tripData, dayIdxMap]);
 
   const formatDateForDisplay = (date: Date): string => {
     const year = date.getFullYear();
@@ -1172,6 +1183,31 @@ export default function Planner() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  /**
+   * 모든 일정 초기화 (세션만 비우기, DB는 건드리지 않음)
+   */
+  const handleClearAllSchedules = () => {
+    if (!tripId) return;
+
+    const confirmed = window.confirm(
+      '⚠️ 화면의 모든 일정이 삭제됩니다.\n(저장하지 않으면 DB에는 영향 없음)\n\n정말로 모든 일정을 초기화하시겠습니까?'
+    );
+
+    if (!confirmed) return;
+
+    // 1. 세션 스토리지 초기화
+    clearPlannerSession(tripId);
+
+    // 2. 로컬 상태 초기화 (빈 일정으로)
+    setTripData({});
+
+    // 3. Dirty 플래그 설정 (저장 필요 상태로)
+    setIsDirty(true);
+
+    console.log('✅ All schedules cleared from session (not saved to DB yet)');
+    alert('✅ 모든 일정이 초기화되었습니다.\n저장하지 않으면 DB에는 영향이 없습니다.');
   };
 
   /**
@@ -1710,6 +1746,18 @@ export default function Planner() {
                 >
                   {viewMode === 'card' ? '📋 타임라인뷰' : '📋 카드뷰'}
                 </Button>
+                {tripId && dayPlans.some(day => day.schedules.length > 0) && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<DeleteSweepIcon />}
+                    onClick={handleClearAllSchedules}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    모든 일정 초기화
+                  </Button>
+                )}
                 {tripId && (
                   <Button
                     variant="contained"
@@ -1751,8 +1799,12 @@ export default function Planner() {
                     onOpenDetail={handleOpenDayDetail}
                     onCopyPrevDay={handleCopyPrevDay}
                     onSearchPlace={(dayNum) => {
-                      setSearchTargetDay(dayNum);
-                      setSearchSidebarOpen(true);
+                      // Day 선택
+                      setSelectedDayNo(dayNum);
+                      console.log(`📌 Day ${dayNum} selected from search button`);
+
+                      // 카카오맵 검색창에 포커스
+                      kakaoMapRef.current?.focusSearchInput();
                     }}
                     isSelected={selectedDayNo === day.dayNumber}
                     onSelect={(dayNum) => {
@@ -1800,7 +1852,14 @@ export default function Planner() {
                 tripData={tripData}
                 onEdit={handleEditSchedule}
                 onDelete={handleDeleteSchedule}
-                onAdd={handleOpenScheduleModal}
+                onAdd={(dayNum) => {
+                  // Day 선택
+                  setSelectedDayNo(dayNum);
+                  console.log(`📌 Day ${dayNum} selected from timeline add button`);
+
+                  // 카카오맵 검색창에 포커스
+                  kakaoMapRef.current?.focusSearchInput();
+                }}
                 selectedDayNo={selectedDayNo}
                 onSelectDay={(dayNum) => {
                   if (selectedDayNo === dayNum) {
@@ -2357,39 +2416,50 @@ export default function Planner() {
             flexDirection: 'column',
           }}
         >
-          {/* 선택된 Day 안내 */}
-          {selectedDayNo && (
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: '#364C84',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                📌 Day {selectedDayNo} 선택됨 - 장소 검색 후 + 버튼으로 추가하세요
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setSelectedDayNo(null)}
-                sx={{
-                  color: 'white',
-                  borderColor: 'white',
-                  '&:hover': {
+          {/* 선택된 Day 안내 - 고정 영역 */}
+          <Box
+            sx={{
+              py: 1,
+              px: 2,
+              bgcolor: selectedDayNo ? '#364C84' : '#e0e0e0',
+              color: selectedDayNo ? 'white' : '#666',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              height: '48px',
+            }}
+          >
+            {selectedDayNo ? (
+              <>
+                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                  📌 Day {selectedDayNo} 선택됨 - 장소 검색 후 + 버튼으로 추가하세요
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setSelectedDayNo(null)}
+                  sx={{
+                    color: 'white',
                     borderColor: 'white',
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                  },
-                }}
-              >
-                선택 해제
-              </Button>
-            </Box>
-          )}
+                    fontSize: '0.8rem',
+                    py: 0.5,
+                    px: 1.5,
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                    },
+                  }}
+                >
+                  선택 해제
+                </Button>
+              </>
+            ) : (
+              <Typography variant="body1" sx={{ fontStyle: 'italic', fontSize: '0.95rem' }}>
+                Day를 선택하면 지도에서 검색한 장소를 일정에 추가할 수 있습니다
+              </Typography>
+            )}
+          </Box>
           <KakaoMapSearch
             ref={kakaoMapRef}
             onPlaceSelect={(place) => {
@@ -2471,19 +2541,22 @@ export default function Planner() {
           if (message.is_bot && message.content) {
             console.log('🤖 챗봇 메시지 수신:', message.content);
 
-            // 장소 추천 파싱 (지도 마커용)
-            const { places, details } = parseRecommendedPlaces(message.content);
-            if (places.length > 0) {
-              console.log('📍 추출된 추천 장소:', places);
-              console.log('📝 추천 상세 정보:', details);
-              setRecommendedPlaces(places);
-              setRecommendationDetails(details);
-              setRecommendationPanelVisible(true); // 하단 패널 표시
-              setRecommendationPanelExpanded(true); // 확장 상태로 오픈
+            // RAG 추천은 별도 이벤트로 처리되므로 여기서는 파싱하지 않음
+            if (!message.content.includes('[RAG_RECOMMENDATION]')) {
+              // 장소 추천 파싱 (지도 마커용)
+              const { places, details } = parseRecommendedPlaces(message.content);
+              if (places.length > 0) {
+                console.log('📍 추출된 추천 장소:', places);
+                console.log('📝 추천 상세 정보:', details);
+                setRecommendedPlaces(places);
+                setRecommendationDetails(details);
+                setRecommendationPanelVisible(true); // 하단 패널 표시
+                setRecommendationPanelExpanded(true); // 확장 상태로 오픈
 
-              // 추천 장소가 있으면 채팅창에 마크다운 메시지 표시하지 않음
-              // UI 패널로만 표시하고 메시지 추가를 건너뜀
-              return;
+                // 추천 장소가 있으면 채팅창에 마크다운 메시지 표시하지 않음
+                // UI 패널로만 표시하고 메시지 추가를 건너뜀
+                return;
+              }
             }
 
             // 챗봇 응답에서 장소 추가 명령 확인
@@ -2525,8 +2598,8 @@ export default function Planner() {
         onPlannerUpdate={(data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => {
           console.log('🔄 Planner update received in planner.tsx:', data);
 
-          // 챗봇 메시지에서 장소 추천 파싱
-          if (data.message) {
+          // RAG 추천은 별도 이벤트로 처리되므로 여기서는 파싱하지 않음
+          if (data.message && !data.message.includes('[RAG_RECOMMENDATION]')) {
             const { places, details } = parseRecommendedPlaces(data.message);
             if (places.length > 0) {
               console.log('🤖 챗봇이 추천한 장소들:', places);
@@ -2545,6 +2618,17 @@ export default function Planner() {
 
           // Reload data from backend (날짜, 일정 모두 포함)
           loadDaysData();
+
+          // 세션 데이터도 다시 로드 (RAG 추천이 세션에 저장되었을 수 있음)
+          if (tripId) {
+            const sessionData = loadPlannerSession(tripId);
+            if (sessionData && sessionData.tripData) {
+              console.log('🔄 세션에서 tripData 다시 로드:', sessionData.tripData);
+              setTripData(sessionData.tripData);
+              setIsDirty(sessionData.isDirty || false);
+              console.log('✅ 세션 데이터 반영 완료 (RAG 추천 포함)');
+            }
+          }
         }}
         onMapSearch={(keyword: string, region?: string) => {
           console.log('🗺️ Map search triggered from chatbot:', { keyword, region });
@@ -2554,6 +2638,94 @@ export default function Planner() {
           } else {
             console.warn('⚠️ KakaoMapSearch ref not available');
           }
+        }}
+        onRagRecommendations={(data: { query: string; rag_results: any[]; refined_plan: any; trip_idx: number; message: string }) => {
+          console.log('✨ RAG recommendations received in planner.tsx:', data);
+
+          // refined_plan 형식: { day_1: [{place, time, reason, address, ...}], day_2: [...] }
+          const { refined_plan } = data;
+
+          if (!refined_plan || Object.keys(refined_plan).length === 0) {
+            console.warn('⚠️ No refined plan data');
+            return;
+          }
+
+          // tripData에 추가 (세션만, DB 저장 안 함)
+          setTripData((prevTripData) => {
+            const updatedTripData = { ...prevTripData };
+
+            Object.entries(refined_plan).forEach(([dayKey, places]: [string, any]) => {
+              const dayNo = parseInt(dayKey.split('_')[1]);
+
+              // Initialize day if not exists
+              if (!updatedTripData[dayNo]) {
+                updatedTripData[dayNo] = [];
+              }
+
+              // 각 장소를 ScheduleItem으로 변환하여 추가
+              places.forEach((place: any) => {
+                const newItem: ScheduleItem = {
+                  time: place.time || '09:00',
+                  location: place.place,
+                  description: place.reason ? `💡 ${place.reason}\n${place.address || ''}` : (place.address || ''),
+                  icon: '🎯',
+                  // Kakao에서 검색한 좌표 포함 (마커 표시용)
+                  latitude: place.latitude,
+                  longitude: place.longitude,
+                };
+
+                // 중복 확인 (같은 장소명이 이미 있으면 스킵)
+                const isDuplicate = updatedTripData[dayNo].some(
+                  (item) => item.location === newItem.location
+                );
+
+                if (!isDuplicate) {
+                  updatedTripData[dayNo].push(newItem);
+                  console.log(`✅ Added "${newItem.location}" to Day ${dayNo} with coords (${place.latitude}, ${place.longitude})`);
+                } else {
+                  console.log(`⏭️ Skipped duplicate: "${newItem.location}" in Day ${dayNo}`);
+                }
+              });
+            });
+
+            // 세션에 저장
+            if (tripId) {
+              savePlannerSession(tripId, {
+                tripData: updatedTripData,
+                startDate,
+                endDate,
+                travelers,
+                selectedDestination,
+                selectedCountry,
+                selectedProvince,
+                activeStep,
+                viewMode,
+                selectedDay,
+                isDirty: true, // 저장 버튼 활성화
+              });
+              console.log('💾 RAG recommendations saved to session');
+            }
+
+            return updatedTripData;
+          });
+
+          // 세션 상태를 dirty로 표시 (저장 버튼 활성화)
+          setIsDirty(true);
+
+          console.log('✅ RAG recommendations added to tripData and session (not saved to DB yet)');
+        }}
+        onTripDatesUpdated={(data: { trip_idx: number; start_date: string; end_date: string; total_days: number; message: string }) => {
+          console.log('📅 Trip dates updated event received:', data);
+
+          // 날짜 업데이트
+          setStartDate(new Date(data.start_date));
+          setEndDate(new Date(data.end_date));
+
+          // DB에서 데이터 다시 로드
+          loadDaysData();
+
+          // 사용자에게 알림
+          alert(data.message);
         }}
         tripTitle={tripTitle}
       />
@@ -2567,6 +2739,7 @@ export default function Planner() {
 
       {/* Place Search Sidebar */}
       <PlaceSearchSidebar
+        ref={placeSearchSidebarRef}
         open={searchSidebarOpen}
         onClose={() => setSearchSidebarOpen(false)}
         selectedDay={searchTargetDay}

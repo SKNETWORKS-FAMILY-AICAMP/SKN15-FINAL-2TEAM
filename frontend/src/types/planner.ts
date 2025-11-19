@@ -12,10 +12,14 @@ export interface ScheduleItem {
   description: string;
   icon: string;
   travel?: TravelInfo;
+  // RAG/Kakao에서 가져온 좌표 (마커 표시용)
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface DayPlan {
   dayNumber: number;
+  dayIdx: number; // DB의 day_idx
   date: string;
   schedules: ScheduleItem[];
   weather?: WeatherData;

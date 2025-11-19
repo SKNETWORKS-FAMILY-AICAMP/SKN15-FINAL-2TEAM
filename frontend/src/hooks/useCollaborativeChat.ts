@@ -29,6 +29,8 @@ interface UseCollaborativeChatOptions {
   onTypingUpdate?: (userId: number, isTyping: boolean) => void;
   onPlannerUpdate?: (data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => void;
   onMapSearch?: (keyword: string, region?: string) => void;
+  onRagRecommendations?: (data: { query: string; rag_results: any[]; refined_plan: any; trip_idx: number; message: string }) => void;
+  onTripDatesUpdated?: (data: { trip_idx: number; start_date: string; end_date: string; total_days: number; message: string }) => void;
 }
 
 export function useCollaborativeChat({
@@ -38,6 +40,8 @@ export function useCollaborativeChat({
   onTypingUpdate,
   onPlannerUpdate,
   onMapSearch,
+  onRagRecommendations,
+  onTripDatesUpdated,
 }: UseCollaborativeChatOptions) {
   const { token, user } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
@@ -206,6 +210,32 @@ export function useCollaborativeChat({
           console.log('🗺️ Map search requested:', data);
           if (onMapSearch) {
             onMapSearch(data.keyword, data.region);
+          }
+          break;
+
+        case 'rag_recommendations':
+          console.log('✨ RAG recommendations received:', data);
+          if (onRagRecommendations) {
+            onRagRecommendations({
+              query: data.query,
+              rag_results: data.rag_results,
+              refined_plan: data.refined_plan,
+              trip_idx: data.trip_idx,
+              message: data.message
+            });
+          }
+          break;
+
+        case 'trip_dates_updated':
+          console.log('📅 Trip dates updated:', data);
+          if (onTripDatesUpdated) {
+            onTripDatesUpdated({
+              trip_idx: data.trip_idx,
+              start_date: data.start_date,
+              end_date: data.end_date,
+              total_days: data.total_days,
+              message: data.message
+            });
           }
           break;
 

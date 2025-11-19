@@ -5,6 +5,8 @@ import { useVoiceRecognitionLocal } from '../../hooks/useVoiceRecognitionLocal';
 import chatAPI from '../../services/chatAPI';
 import tripAPI from '../../services/tripAPI';
 import InviteCodeModal from './InviteCodeModal';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Position {
   left?: number;
@@ -19,9 +21,11 @@ interface UnifiedChatWidgetProps {
   onMessage?: (message: any) => void;
   onPlannerUpdate?: (data: { updated_by: string; update_type: string; trip_idx: number; message: string }) => void;
   onMapSearch?: (keyword: string, region?: string) => void;
+  onRagRecommendations?: (data: { query: string; rag_results: any[]; refined_plan: any; trip_idx: number; message: string }) => void;
+  onTripDatesUpdated?: (data: { trip_idx: number; start_date: string; end_date: string; total_days: number; message: string }) => void;
 }
 
-const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle = '여행 계획', onMessage, onPlannerUpdate, onMapSearch }) => {
+const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle = '여행 계획', onMessage, onPlannerUpdate, onMapSearch, onRagRecommendations, onTripDatesUpdated }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const [roomId, setRoomId] = useState<number | null>(null);
@@ -120,6 +124,18 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
       console.log('🗺️ Map search received in UnifiedChatWidget:', { keyword, region });
       if (onMapSearch) {
         onMapSearch(keyword, region);
+      }
+    },
+    onRagRecommendations: (data) => {
+      console.log('✨ RAG recommendations received in UnifiedChatWidget:', data);
+      if (onRagRecommendations) {
+        onRagRecommendations(data);
+      }
+    },
+    onTripDatesUpdated: (data) => {
+      console.log('📅 Trip dates updated in UnifiedChatWidget:', data);
+      if (onTripDatesUpdated) {
+        onTripDatesUpdated(data);
       }
     },
   });
@@ -687,10 +703,12 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
             <div className="welcome-message">
               <div className="message bot-message">
                 <div className="message-content">
-                  {isGroupChat
-                    ? `👋 ${tripTitle} 그룹 채팅방에 오신 것을 환영합니다!\n\n동행자들과 함께 여행 계획을 상의하세요. @봇을 입력하면 AI가 도와드립니다!`
-                    : '안녕하세요! 👋 AI 여행 도우미입니다.\n\n여행 계획을 도와드릴게요. 궁금한 것이 있으시면 언제든 물어보세요!\n\n동행자를 초대하면 그룹 채팅방으로 전환됩니다.'
-                  }
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {isGroupChat
+                      ? `👋 ${tripTitle} 그룹 채팅방에 오신 것을 환영합니다!\n\n동행자들과 함께 여행 계획을 상의하세요. @봇을 입력하면 AI가 도와드립니다!`
+                      : '안녕하세요! 👋 AI 여행 도우미입니다.\n\n여행 계획을 도와드릴게요. 궁금한 것이 있으시면 언제든 물어보세요!\n\n동행자를 초대하면 그룹 채팅방으로 전환됩니다.'
+                    }
+                  </ReactMarkdown>
                 </div>
                 <div className="message-time">방금</div>
               </div>
@@ -724,7 +742,30 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ tripId, tripTitle
                 )}
                 <div className="message-content">
                   {message.is_bot && <span className="bot-badge">🤖 AI</span>}
-                  {message.content}
+                  {message.is_bot ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        // 커스텀 스타일링
+                        p: ({node, ...props}) => <p style={{margin: '0.5em 0'}} {...props} />,
+                        strong: ({node, ...props}) => <strong style={{color: '#364C84', fontWeight: 'bold'}} {...props} />,
+                        ul: ({node, ...props}) => <ul style={{paddingLeft: '1.5em', margin: '0.5em 0'}} {...props} />,
+                        ol: ({node, ...props}) => <ol style={{paddingLeft: '1.5em', margin: '0.5em 0'}} {...props} />,
+                        li: ({node, ...props}) => <li style={{marginBottom: '0.3em'}} {...props} />,
+                        a: ({node, ...props}) => <a style={{color: '#4A90E2', textDecoration: 'underline'}} {...props} />,
+                        code: ({node, inline, ...props}: any) =>
+                          inline ? (
+                            <code style={{backgroundColor: '#f0f0f0', padding: '2px 4px', borderRadius: '3px', fontSize: '0.9em'}} {...props} />
+                          ) : (
+                            <code style={{display: 'block', backgroundColor: '#f0f0f0', padding: '8px', borderRadius: '4px', overflowX: 'auto'}} {...props} />
+                          ),
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  ) : (
+                    message.content
+                  )}
                 </div>
                 <div className="message-time">{formatTime(message.created_at)}</div>
               </div>

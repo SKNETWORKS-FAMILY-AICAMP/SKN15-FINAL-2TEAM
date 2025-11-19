@@ -15,6 +15,8 @@ User = get_user_model()
 @database_sync_to_async
 def get_user_from_token(token_string):
     """Get user from JWT token"""
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         # Decode token
         access_token = AccessToken(token_string)
@@ -22,8 +24,19 @@ def get_user_from_token(token_string):
 
         # Get user
         user = User.objects.get(user_idx=user_id)
+        logger.info(f"✅ Token decoded successfully: user_id={user_id}, email={user.email}")
         return user
-    except (TokenError, User.DoesNotExist, KeyError):
+    except TokenError as e:
+        logger.error(f"❌ JWT Token error: {e}")
+        return AnonymousUser()
+    except User.DoesNotExist as e:
+        logger.error(f"❌ User not found: {e}")
+        return AnonymousUser()
+    except KeyError as e:
+        logger.error(f"❌ KeyError in token: {e}")
+        return AnonymousUser()
+    except Exception as e:
+        logger.error(f"❌ Unexpected error decoding token: {e}")
         return AnonymousUser()
 
 
@@ -41,8 +54,15 @@ class JWTAuthMiddleware(BaseMiddleware):
 
         # Authenticate user
         if token:
-            scope['user'] = await get_user_from_token(token)
+            user = await get_user_from_token(token)
+            scope['user'] = user
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"🔐 WebSocket auth: token={'present' if token else 'missing'}, user={user.email if hasattr(user, 'email') else 'anonymous'}, is_authenticated={user.is_authenticated if hasattr(user, 'is_authenticated') else False}")
         else:
             scope['user'] = AnonymousUser()
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"⚠️ WebSocket: No token provided in query string")
 
         return await super().__call__(scope, receive, send)

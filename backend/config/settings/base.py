@@ -176,7 +176,7 @@ OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 OPENAI_MODEL = env('OPENAI_MODEL', default='gpt-4o-mini')
 
 # Chat Agent Settings
-CHAT_AGENT_MODEL = env('CHAT_AGENT_MODEL', default='gpt-4-turbo-preview')
+CHAT_AGENT_MODEL = env('CHAT_AGENT_MODEL', default='gpt-4o-mini')
 CHAT_AGENT_TEMPERATURE = env('CHAT_AGENT_TEMPERATURE', default='0.7')
 
 # STT (Speech-to-Text) Settings

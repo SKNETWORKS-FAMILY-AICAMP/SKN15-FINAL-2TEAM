@@ -698,6 +698,26 @@ class TripDayViewSet(viewsets.ModelViewSet):
         instance.delete()
         self._broadcast_planner_update(trip, 'day', f'{self.request.user.email}님이 Day를 삭제했습니다.')
 
+    @action(detail=True, methods=['delete'], url_path='delete_all_items')
+    def delete_all_items(self, request, pk=None):
+        """Delete all items in this day"""
+        day = self.get_object()
+
+        # Delete all items
+        deleted_count, _ = TripItem.objects.filter(day_idx=day).delete()
+
+        # Broadcast update
+        self._broadcast_planner_update(
+            day.trip_idx,
+            'item',
+            f'{request.user.email}님이 Day {day.day_no}의 모든 일정을 삭제했습니다.'
+        )
+
+        return Response({
+            'message': f'{deleted_count}개의 일정이 삭제되었습니다.',
+            'deleted_count': deleted_count
+        }, status=status.HTTP_200_OK)
+
     def _broadcast_planner_update(self, trip, update_type, message):
         """Broadcast planner update"""
         try:
@@ -903,6 +923,156 @@ def admin_statistics(request):
             'budget_distribution': list(budget_distribution),
             'party_distribution': list(party_distribution),
             'recent_trips': recent_trips_data,
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_all_trips(request):
+    """
+    관리자용: 전체 여행 계획 목록 조회
+    - 페이지네이션 지원
+    - 검색 및 필터링 지원
+    """
+    try:
+        # 쿼리 파라미터
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 20))
+        search = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        satisfaction_filter = request.GET.get('satisfaction', '')
+
+        # 기본 쿼리셋
+        queryset = TripPlan.objects.all().select_related(
+            'owner_user_idx',
+            'country_idx',
+            'province_idx',
+            'city_idx'
+        ).prefetch_related('members')
+
+        # 검색 필터
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(owner_user_idx__email__icontains=search) |
+                Q(invite_code__icontains=search)
+            )
+
+        # 상태 필터
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        # 만족도 필터
+        if satisfaction_filter:
+            if satisfaction_filter == 'none':
+                queryset = queryset.filter(user_satisfaction__isnull=True)
+            else:
+                queryset = queryset.filter(user_satisfaction=satisfaction_filter)
+
+        # 정렬
+        queryset = queryset.order_by('-created_at')
+
+        # 전체 카운트
+        total_count = queryset.count()
+
+        # 페이지네이션
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        trips = queryset[start_idx:end_idx]
+
+        # 데이터 직렬화
+        trips_data = []
+        for trip in trips:
+            trips_data.append({
+                'trip_idx': trip.trip_idx,
+                'title': trip.title,
+                'owner_email': trip.owner_user_idx.email if trip.owner_user_idx else None,
+                'owner_name': trip.owner_user_idx.email if trip.owner_user_idx else None,
+                'country_name': trip.country_idx.country_name if trip.country_idx else None,
+                'province_name': trip.province_idx.name if trip.province_idx else None,
+                'city_name': trip.city_idx.name if trip.city_idx else None,
+                'start_date': trip.start_date.isoformat() if trip.start_date else None,
+                'end_date': trip.end_date.isoformat() if trip.end_date else None,
+                'party_size': trip.party_size,
+                'budget': float(trip.budget_amount) if trip.budget_amount else None,
+                'budget_currency': trip.budget_currency,
+                'status': trip.status,
+                'user_satisfaction': trip.user_satisfaction,
+                'invite_code': trip.invite_code,
+                'member_count': trip.members.count(),
+                'created_at': trip.created_at.isoformat(),
+                'updated_at': trip.updated_at.isoformat(),
+            })
+
+        return Response({
+            'success': True,
+            'trips': trips_data,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total_count': total_count,
+                'total_pages': (total_count + page_size - 1) // page_size,
+            }
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_trip_chat_logs(request, trip_idx):
+    """
+    관리자용: 특정 여행 계획의 봇 명령어 로그 조회
+    - ChatRequest 테이블에서 사용자 명령, 봇 응답, 사용된 도구, 실행 시간 등 조회
+    """
+    try:
+        from apps.chat.models import ChatRequest
+
+        # 여행 계획 확인
+        trip = get_object_or_404(TripPlan, trip_idx=trip_idx)
+
+        # ChatRequest 조회 (봇 명령어 로그)
+        chat_requests = ChatRequest.objects.filter(
+            trip_idx=trip
+        ).select_related('user_idx', 'room_idx').order_by('created_at')
+
+        if not chat_requests.exists():
+            return Response({
+                'success': True,
+                'requests': [],
+                'message': '이 여행 계획에는 봇 명령어 기록이 없습니다.'
+            })
+
+        # 요청 데이터 구성
+        requests_data = []
+        for req in chat_requests:
+            requests_data.append({
+                'request_idx': req.request_idx,
+                'user_message': req.user_message,
+                'agent_response': req.agent_response,
+                'tools_used': req.tools_used,  # 사용된 도구 목록
+                'request_type': req.request_type,  # 요청 타입 (add_place, search, recommend 등)
+                'execution_time_ms': req.execution_time_ms,  # 실행 시간
+                'success': req.success,  # 성공 여부
+                'error_message': req.error_message,  # 에러 메시지 (있다면)
+                'user_email': req.user_idx.email if req.user_idx else None,
+                'created_at': req.created_at.isoformat(),
+            })
+
+        return Response({
+            'success': True,
+            'requests': requests_data,
+            'total_requests': len(requests_data),
         })
 
     except Exception as e:

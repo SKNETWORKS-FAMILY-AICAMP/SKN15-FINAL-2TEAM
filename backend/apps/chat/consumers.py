@@ -23,14 +23,19 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'trip_chat_{self.room_id}'
         self.user = self.scope.get('user')
 
+        logger.info(f"🔌 WebSocket connect attempt: room_id={self.room_id}, user={self.user}, is_authenticated={self.user.is_authenticated if self.user else False}")
+
         # 인증되지 않은 사용자 거부
         if not self.user or not self.user.is_authenticated:
+            logger.warning(f"❌ Connection rejected: user not authenticated (user={self.user})")
             await self.close()
             return
 
         # 채팅방 접근 권한 확인
         has_access = await self.check_room_access()
+        logger.info(f"🔐 Access check result for user {self.user.email}: has_access={has_access}")
         if not has_access:
+            logger.warning(f"❌ Connection rejected: user {self.user.email} has no access to room {self.room_id}")
             await self.close()
             return
 
@@ -105,9 +110,30 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         if not content.strip():
             return
 
-        # DB에 메시지 저장
+        # 🛡️ 보안 검사: 프롬프트 인젝션 탐지
+        from .security import get_guardrail
+        guardrail = get_guardrail()
+
+        # 입력 검증 (비동기 래퍼)
+        security_result = await self.validate_user_input(content, guardrail)
+
+        if not security_result.is_safe:
+            # 위험한 입력 감지 - 안전한 오류 메시지 전송
+            logger.warning(f"🚨 Blocked unsafe input from {self.user.email}: {security_result.reason}")
+
+            error_message = guardrail.get_safe_error_message(security_result.risk_level)
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': error_message
+            }))
+            return
+
+        # 안전한 입력으로 정제된 내용 사용
+        safe_content = security_result.sanitized_input
+
+        # DB에 메시지 저장 (정제된 내용)
         message = await self.save_message(
-            content=content,
+            content=safe_content,
             msg_type='text'
         )
 
@@ -128,8 +154,8 @@ class TripChatConsumer(AsyncWebsocketConsumer):
         )
 
         # 챗봇 트리거 확인 (1대1 채팅에서는 항상, 단체 채팅에서는 @봇 멘션 시)
-        if await self.should_trigger_bot(content):
-            await self.trigger_chatbot(content)
+        if await self.should_trigger_bot(safe_content):
+            await self.trigger_chatbot(safe_content)
 
     async def handle_typing(self, data):
         """타이핑 상태 브로드캐스트"""
@@ -235,6 +261,36 @@ class TripChatConsumer(AsyncWebsocketConsumer):
                 'keyword': event.get('keyword'),
                 'region': event.get('region'),
                 'message': event.get('message', '지도에서 검색 중...')
+            }))
+        except Exception:
+            # Connection already closed, ignore
+            pass
+
+    async def rag_recommendations(self, event):
+        """RAG 추천 데이터 전송 (플래너 세션에 추가용)"""
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'rag_recommendations',
+                'query': event.get('query'),
+                'rag_results': event.get('rag_results'),
+                'refined_plan': event.get('refined_plan'),
+                'trip_idx': event.get('trip_idx'),
+                'message': event.get('message', 'RAG 추천 결과')
+            }))
+        except Exception:
+            # Connection already closed, ignore
+            pass
+
+    async def trip_dates_updated(self, event):
+        """여행 날짜 자동 변경 알림"""
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'trip_dates_updated',
+                'trip_idx': event.get('trip_idx'),
+                'start_date': event.get('start_date'),
+                'end_date': event.get('end_date'),
+                'total_days': event.get('total_days'),
+                'message': event.get('message', '여행 날짜가 자동 조정되었습니다.')
             }))
         except Exception:
             # Connection already closed, ignore
@@ -459,6 +515,11 @@ class TripChatConsumer(AsyncWebsocketConsumer):
                 'is_online': True,
                 'is_typing': False
             }
+
+    @database_sync_to_async
+    def validate_user_input(self, content, guardrail):
+        """사용자 입력 검증 (비동기 래퍼)"""
+        return guardrail.validate_input(content)
 
     @database_sync_to_async
     def get_recent_messages(self, limit=10):

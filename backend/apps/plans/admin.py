@@ -25,7 +25,7 @@ class TripPlanAdmin(admin.ModelAdmin):
             'fields': ('start_date', 'end_date', 'party_size', 'budget_currency', 'budget_amount')
         }),
         ('Location', {
-            'fields': ('country_idx', 'region1_idx', 'region2_idx')
+            'fields': ('country_idx', 'province_idx', 'city_idx', 'district_idx')
         }),
         ('Invite Code', {
             'fields': ('invite_code', 'invite_code_expires_at'),

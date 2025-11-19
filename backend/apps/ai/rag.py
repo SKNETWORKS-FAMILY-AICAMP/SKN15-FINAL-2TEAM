@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 import json
 
 from apps.ai.models import TripCourseEmbedding
-from apps.common.models import Country, Region1
+from apps.common.models import Country
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,11 @@ class TripRAG:
             query: 검색 쿼리 (예: "서울 3박4일 여행", "제주도 가족 여행")
 
         Returns:
-            1536차원 임베딩 벡터
+            임베딩 벡터 (text-embedding-3-small 사용)
         """
         try:
             response = openai.embeddings.create(
-                model="text-embedding-ada-002",
+                model="text-embedding-3-small",  # 저장 시와 동일한 모델 사용
                 input=query
             )
             embedding = response.data[0].embedding
@@ -51,7 +51,7 @@ class TripRAG:
         self,
         query: str,
         country_code: Optional[int] = None,
-        region1_idx: Optional[int] = None,
+        province_idx: Optional[int] = None,
         limit: int = 5,
         min_views: int = 1000,
         use_fallback: bool = True
@@ -62,7 +62,7 @@ class TripRAG:
         Args:
             query: 검색 쿼리 (예: "서울 맛집 투어", "제주도 자연 여행")
             country_code: 국가 필터 (선택)
-            region1_idx: 도시 필터 (선택)
+            province_idx: 시/도 필터 (선택)
             limit: 반환할 결과 수
             min_views: 최소 조회수 (인기 영상 필터)
             use_fallback: RAG 결과 없을 시 외부 검색 사용 여부
@@ -80,8 +80,8 @@ class TripRAG:
             if country_code:
                 filters &= Q(country_code=country_code)
 
-            if region1_idx:
-                filters &= Q(region1_idx=region1_idx)
+            if province_idx:
+                filters &= Q(province_idx=province_idx)
 
             if min_views:
                 filters &= Q(views_num__gte=min_views)
@@ -99,21 +99,36 @@ class TripRAG:
             # 4. 결과 포맷팅
             results = []
             for trip in similar_trips:
-                # metadata에서 상세 정보 추출
-                metadata = trip.metadata or {}
+                # parsed_itinerary에서 상세 정보 추출
+                parsed = trip.parsed_itinerary or {}
+                metadata = trip.metadata or {}  # fallback
+
+                # places 데이터를 장소 리스트로 변환
+                places = []
+                for place in parsed.get('places', []):
+                    places.append({
+                        'name': place.get('name', ''),
+                        'type': place.get('type', ''),
+                        'description': place.get('description', ''),
+                        'order': place.get('order', 0)
+                    })
 
                 result = {
                     "video_id": trip.video_id,
                     "title": trip.title,
                     "channel": trip.channel,
                     "url": trip.url,
-                    "country": trip.country_name,
-                    "city": trip.region1_idx.city_name if trip.region1_idx else None,
+                    "location": trip.location_name,
+                    "city": trip.province_idx.name if trip.province_idx else None,
                     "views": trip.views_num,
                     "upload_date": f"{trip.upload_year}-{trip.upload_month:02d}" if trip.upload_year and trip.upload_month else None,
                     "similarity_score": float(1 - trip.distance),  # 거리를 유사도로 변환
+                    "summary": parsed.get('summary', ''),
+                    "places": places,  # 파싱된 장소 리스트
+                    "parsed_itinerary": parsed,  # 전체 파싱 데이터 (title, summary, places 등 모두 포함)
+                    "raw_content_preview": trip.raw_content[:500] if trip.raw_content else '',  # 원문 미리보기
                     "description": metadata.get('description_ko', metadata.get('description_en', '')),
-                    "schedules": metadata.get('schedules', []),
+                    "schedules": metadata.get('schedules', []),  # legacy
                     "tags": metadata.get('tags', []),
                     "source": "rag_database"
                 }
@@ -124,7 +139,7 @@ class TripRAG:
             # 5. Fallback 전략: RAG 결과가 없으면 외부 검색
             if len(results) == 0 and use_fallback:
                 logger.warning(f"⚠️ No RAG results for '{query}', trying fallback search...")
-                fallback_results = self._fallback_search(query, country_code, region1_idx, limit)
+                fallback_results = self._fallback_search(query, country_code, province_idx, limit)
                 if fallback_results:
                     logger.info(f"✅ Fallback found {len(fallback_results)} results")
                     return fallback_results
@@ -138,7 +153,7 @@ class TripRAG:
             # 예외 발생 시에도 Fallback 시도
             if use_fallback:
                 try:
-                    return self._fallback_search(query, country_code, region1_idx, limit)
+                    return self._fallback_search(query, country_code, province_idx, limit)
                 except:
                     pass
             return []
@@ -191,7 +206,7 @@ class TripRAG:
         self,
         query: str,
         country_code: Optional[int] = None,
-        region1_idx: Optional[int] = None,
+        province_idx: Optional[int] = None,
         limit: int = 5
     ) -> List[Dict]:
         """
@@ -205,7 +220,7 @@ class TripRAG:
         Args:
             query: 검색 쿼리
             country_code: 국가 필터
-            region1_idx: 도시 필터
+            province_idx: 시/도 필터
             limit: 결과 수
 
         Returns:
@@ -214,7 +229,7 @@ class TripRAG:
         results = []
 
         # 위치 정보 추가
-        location_info = self._get_location_info(country_code, region1_idx)
+        location_info = self._get_location_info(country_code, province_idx)
         search_query = f"{query} {location_info}" if location_info else query
 
         # 1단계: YouTube Data API 실시간 검색
@@ -239,14 +254,16 @@ class TripRAG:
 
         return results[:limit]
 
-    def _get_location_info(self, country_code: Optional[int], region1_idx: Optional[int]) -> str:
+    def _get_location_info(self, country_code: Optional[int], province_idx: Optional[int]) -> str:
         """국가/도시 정보를 문자열로 변환"""
+        from apps.common.models import Province
+
         parts = []
-        if region1_idx:
+        if province_idx:
             try:
-                region = Region1.objects.get(region1_idx=region1_idx)
-                parts.append(region.city_name)
-            except Region1.DoesNotExist:
+                province = Province.objects.get(province_idx=province_idx)
+                parts.append(province.name)
+            except Province.DoesNotExist:
                 pass
 
         if country_code:
