@@ -414,6 +414,314 @@ export default function Home() {
           </Grid>
         </Box>
 
+        {/* AI Chatbot Features Section */}
+        <Box sx={{ mb: 10 }}>
+          <Typography variant="h2" align="center" sx={{ mb: 2 }}>
+            AI 챗봇이 할 수 있는 일
+          </Typography>
+          <Typography variant="h6" align="center" color="text.secondary" sx={{ mb: 6 }}>
+            간단한 채팅만으로 모든 여행 계획이 자동으로 완성됩니다
+          </Typography>
+
+          <Grid container spacing={4}>
+            {/* 1. 자동 일정 생성 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>🗺️</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      자동 일정 생성
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      RAG 기반 스마트 추천 시스템
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  "강릉 1박2일 일정 짜줘"라고 말하면 AI가 자동으로 최적의 여행 일정을 생성합니다.
+                  시간대별 동선, 맛집, 관광지를 모두 고려한 완벽한 루트를 제공합니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "제주도 2박3일 일정 짜줘"
+                    <br />
+                    🤖 Day 1: 성산일출봉 → 협재해수욕장 → 흑돼지맛집
+                    <br />
+                    🤖 Day 2: 한라산 → 카페거리 → 해산물요리...
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* 2. 맞춤형 장소 추천 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>🎯</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      맞춤형 장소 추천
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      AI 기반 개인화 추천
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  선호하는 여행 스타일, 예산, 동행자 정보를 고려하여 딱 맞는 장소를 추천합니다.
+                  카페, 맛집, 관광지, 액티비티까지 모두 포함됩니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "부산 감성 카페 추천해줘"
+                    <br />
+                    🤖 ☕ 테라로사 (바다 전망)
+                    <br />
+                    🤖 ☕ 밀당로스터즈 (오션뷰)...
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* 3. 실시간 날씨 정보 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>🌤️</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      실시간 날씨 정보
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      기상청 API 연동
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  여행 날짜의 날씨를 미리 확인하고, 날씨에 맞는 일정을 추천받으세요.
+                  비 오는 날은 실내 활동, 맑은 날은 야외 활동을 자동으로 제안합니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "내일 서울 날씨 어때?"
+                    <br />
+                    🤖 내일 서울 날씨는 맑음 ☀️
+                    <br />
+                    🤖 기온 15°C, 강수확률 10%
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* 4. 일정 수정/추가 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>✏️</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      자유로운 일정 수정
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      말로 수정하는 일정 관리
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  "2일차에 카페 추가해줘", "첫날 점심 변경해줘" 등 자연스러운 대화로 일정을
+                  자유롭게 수정할 수 있습니다. 드래그 앤 드롭도 지원합니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "2일차 오후에 카페 추가해줘"
+                    <br />
+                    🤖 ✅ 2일차 15:00에 '테라로사' 추가했습니다!
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* 5. 예산 계산 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>💰</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      스마트 예산 관리
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      항목별 예산 자동 계산
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  교통비, 숙박비, 식비, 관광비를 자동으로 계산하고 추적합니다.
+                  예산을 초과하면 알림을 받고 대안을 추천받을 수 있습니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "총 예산 얼마야?"
+                    <br />
+                    🤖 💵 총 예산: 450,000원
+                    <br />
+                    🤖 숙박 180,000 | 식비 150,000...
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* 6. 지도 자동 연동 */}
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  border: '2px solid #e3f2fd',
+                  boxShadow: '0 4px 15px rgba(54, 76, 132, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#364C84',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 25px rgba(54, 76, 132, 0.2)',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography variant="h3" sx={{ mr: 2 }}>🗺️</Typography>
+                  <Box>
+                    <Typography variant="h5" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
+                      지도 자동 연동
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Kakao Map 실시간 동기화
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2, lineHeight: 1.8 }}>
+                  챗봇이 추가한 모든 장소가 자동으로 지도에 마커로 표시됩니다.
+                  경로 최적화로 이동 시간을 최소화하고 효율적인 동선을 제안합니다.
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: '#f8f9fa',
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#555', fontFamily: 'monospace' }}>
+                    💬 "경포대 추가해줘"
+                    <br />
+                    🤖 ✅ 일정에 추가하고 지도에 마커를 표시했습니다 📍
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
+
         {/* Travel Info Section */}
         <Box sx={{ bgcolor: '#f8f9fa', py: 8, px: 5, borderRadius: '15px', mb: 10 }}>
           <Typography variant="h2" align="center" sx={{ mb: 2 }}>

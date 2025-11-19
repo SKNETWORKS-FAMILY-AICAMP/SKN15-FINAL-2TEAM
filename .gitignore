@@ -1,8 +1,8 @@
-# Environment Variables
+# Environment Variables (실제 사용 파일만 제외)
 .env
 .env.local
 .env.*.local
-.env.aws.example
+# .env.example은 Git에 포함 (템플릿)
 
 # Python
 __pycache__/
@@ -95,7 +95,7 @@ ssl/
 
 # 로컬 개발용 문서
 /docs/
-*.md
+# *.md  # 주석 처리: README.md, DEPLOYMENT.md 등 중요한 문서는 포함되어야 함
 
 # 배포 예시 및 템플릿 (참고용)
 /deploy-examples/
@@ -106,6 +106,7 @@ ssl/
 
 # 배포용 스크립트는 Git에 포함
 !deploy-instance.sh
+!deploy-auto.sh
 !nginx/docker-entrypoint.sh
 
 # SSH 키 파일
@@ -129,9 +130,9 @@ test_*.sh
 # Claude Code
 .claude/
 
-# 로컬 환경변수 예시 (로컬 개발용)
-.env.example
-backend/.env.example
+# 로컬 환경변수 예시 - 주석 처리 (템플릿은 Git에 포함)
+# .env.example
+# backend/.env.example
 
 # SQL 파일 (데이터베이스 초기화 제외)
 *.sql
