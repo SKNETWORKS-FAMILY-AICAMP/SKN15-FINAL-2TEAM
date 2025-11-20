@@ -16,6 +16,10 @@ selenium==4.17.2
 psycopg2-binary==2.9.9
 sqlalchemy==1.4.51
 
+# Django (for kma_daily_scraper.py)
+Django==4.2.9
+djangorestframework==3.14.0
+
 # Utilities
 python-dotenv==1.0.1
 
