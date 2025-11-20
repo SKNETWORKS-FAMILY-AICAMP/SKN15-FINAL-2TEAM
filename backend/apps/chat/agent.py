@@ -1541,14 +1541,27 @@ JSON만 출력하세요. 설명이나 다른 텍스트는 금지입니다.
 
                                 # 🆕 지역명이 있으면 장소명 앞에 붙여서 검색 (더 정확한 위치 검색)
                                 search_query = f"{region_name} {place_name}" if region_name else place_name
-                                params = {"query": search_query, "size": 1}
+                                params = {"query": search_query, "size": 5}  # 여러 결과 가져와서 필터링
                                 logger.info(f"🔍 Kakao API 검색 (DB 저장용): '{search_query}'")
 
                                 response = requests.get(url, headers=headers, params=params, timeout=5)
                                 data = response.json()
 
                                 if data.get('documents'):
-                                    place_data = data['documents'][0]
+                                    # 지역 필터링: region_name이 주소에 포함된 결과만 선택
+                                    filtered_results = data['documents']
+                                    if region_name:
+                                        filtered_results = [
+                                            doc for doc in data['documents']
+                                            if region_name in (doc.get('address_name', '') + doc.get('road_address_name', ''))
+                                        ]
+
+                                    # 필터링된 결과가 없으면 해당 장소 스킵
+                                    if region_name and not filtered_results:
+                                        logger.warning(f"⚠️ 지역 불일치로 스킵: '{place_name}' (expected region: {region_name})")
+                                        continue
+
+                                    place_data = filtered_results[0] if filtered_results else data['documents'][0]
                                     verified_name = place_data['place_name']
                                     place_info_kakao = {
                                         'address': place_data.get('road_address_name') or place_data.get('address_name'),

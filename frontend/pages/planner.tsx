@@ -2664,11 +2664,21 @@ export default function Planner() {
 
               // 각 장소를 ScheduleItem으로 변환하여 추가
               places.forEach((place: any) => {
+                // description 형식: 주소 + 카테고리 (일반 추가와 동일하게)
+                const descriptionParts = [];
+                if (place.address) {
+                  descriptionParts.push(place.address);
+                }
+                if (place.category) {
+                  descriptionParts.push(`카테고리: ${place.category}`);
+                }
+                const description = descriptionParts.join('\n') || '';
+
                 const newItem: ScheduleItem = {
                   time: place.time || '09:00',
                   location: place.place,
-                  description: place.reason ? `💡 ${place.reason}\n${place.address || ''}` : (place.address || ''),
-                  icon: '🎯',
+                  description: description,
+                  icon: '📍',  // 일반 추가와 동일한 아이콘
                   // Kakao에서 검색한 좌표 포함 (마커 표시용)
                   latitude: place.latitude,
                   longitude: place.longitude,
