@@ -3,6 +3,7 @@ import api from './api';
 export interface YouTubeCrawlerJob {
   job_idx: number;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  location: string | null;
   total_urls: number;
   processed_count: number;
   success_count: number;
@@ -59,6 +60,42 @@ const youtubeCrawlerAPI = {
    */
   cancelJob: async (jobIdx: number): Promise<{ success: boolean; message: string }> => {
     const response = await api.post(`/api/plans/youtube-crawler/${jobIdx}/cancel/`);
+    return response.data;
+  },
+
+  /**
+   * 크롤링된 데이터 조회
+   */
+  getCollectedData: async (params: {
+    location?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{
+    data: Array<{
+      id: number;
+      video_id: string;
+      title: string;
+      channel: string;
+      url: string;
+      location: string;
+      country: string | null;
+      province: string | null;
+      city: string | null;
+      district: string | null;
+      upload_year: number | null;
+      upload_month: number | null;
+      views: number | null;
+      has_parsed_data: boolean;
+      created_at: string;
+    }>;
+    pagination: {
+      total: number;
+      page: number;
+      page_size: number;
+      total_pages: number;
+    };
+  }> => {
+    const response = await api.get('/api/plans/youtube-crawler/collected_data/', { params });
     return response.data;
   },
 };

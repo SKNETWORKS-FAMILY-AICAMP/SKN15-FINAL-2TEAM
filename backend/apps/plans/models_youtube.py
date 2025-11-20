@@ -25,6 +25,7 @@ class YouTubeCrawlerJob(models.Model):
         related_name='youtube_jobs'
     )
     file_path = models.TextField(help_text='업로드된 data.txt 파일 경로')
+    location = models.CharField(max_length=200, null=True, blank=True, help_text='처리 중인 지역명')
     total_urls = models.IntegerField(default=0, help_text='총 URL 개수')
     processed_count = models.IntegerField(default=0, help_text='처리 완료 개수')
     success_count = models.IntegerField(default=0, help_text='성공 개수')

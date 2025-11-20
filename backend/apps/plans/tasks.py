@@ -29,9 +29,23 @@ def run_youtube_crawler_task(job_idx: int, file_path: str):
         # URL 읽기
         urls_data = read_youtube_urls(file_path)
         job.total_urls = len(urls_data)
+
+        # 지역명 저장 (첫 번째 데이터의 location)
+        if urls_data and len(urls_data) > 0:
+            job.location = urls_data[0].get('location', '')
+
         job.save()
 
-        logger.info(f"[Job #{job_idx}] 총 {len(urls_data)}개 URL 처리 시작")
+        # URL이 없으면 실패 처리
+        if job.total_urls == 0:
+            job.status = 'failed'
+            job.error_message = '파일에서 유효한 YouTube URL을 찾을 수 없습니다.'
+            job.completed_at = timezone.now()
+            job.save()
+            logger.warning(f"[Job #{job_idx}] URL이 없어 작업 종료")
+            return
+
+        logger.info(f"[Job #{job_idx}] 총 {len(urls_data)}개 URL 처리 시작 (지역: {job.location})")
 
         # 각 영상 처리
         success_count = 0
