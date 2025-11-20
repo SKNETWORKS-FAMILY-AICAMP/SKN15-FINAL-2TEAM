@@ -23,7 +23,7 @@ else:
     # 로컬 환경
     sys.path.append('/home/pjw/workspace/SKN15-FINAL-2TEAM/backend')
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 import django
 django.setup()
 
