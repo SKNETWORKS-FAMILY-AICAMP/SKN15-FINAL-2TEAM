@@ -12,7 +12,14 @@ import os
 import time
 
 # Django 설정
-sys.path.append('/home/pjw/workspace/SKN15-FINAL-2TEAM/backend')
+# Airflow 컨테이너에서 실행될 경우를 위한 경로 설정
+backend_path = os.environ.get('BACKEND_PATH', '/opt/airflow/backend')
+if os.path.exists(backend_path):
+    sys.path.insert(0, backend_path)
+else:
+    # 로컬 환경
+    sys.path.append('/home/pjw/workspace/SKN15-FINAL-2TEAM/backend')
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 import django
 django.setup()

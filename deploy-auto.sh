@@ -440,11 +440,15 @@ services:
       - AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
       - AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
       - MAIN_DATABASE_URL=${DATABASE_URL}
+      - PYTHONPATH=/opt/airflow/backend:\$PYTHONPATH
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - BACKEND_PATH=/opt/airflow/backend
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./airflow/scripts:/opt/airflow/scripts
+      - ./backend:/opt/airflow/backend
       - ./data/airflow-data:/opt/airflow/data
     ports:
       - "8080:8080"
@@ -467,11 +471,15 @@ services:
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - MAIN_DATABASE_URL=${DATABASE_URL}
+      - PYTHONPATH=/opt/airflow/backend:\$PYTHONPATH
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - BACKEND_PATH=/opt/airflow/backend
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./airflow/scripts:/opt/airflow/scripts
+      - ./backend:/opt/airflow/backend
       - ./data/airflow-data:/opt/airflow/data
     depends_on:
       - airflow-postgres

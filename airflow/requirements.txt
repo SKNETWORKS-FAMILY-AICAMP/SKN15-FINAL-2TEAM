@@ -15,13 +15,19 @@ selenium==4.17.2
 # Database
 psycopg2-binary==2.9.9
 sqlalchemy==1.4.51
+pgvector==0.2.4
 
 # Django (for kma_daily_scraper.py)
 Django==4.2.9
 djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-environ==0.11.2
+django-filter==23.5
 
 # Utilities
 python-dotenv==1.0.1
+python-dateutil==2.8.2
+pytz==2023.3.post1
 
 # YouTube & OpenAI
 youtube-transcript-api==0.6.2
