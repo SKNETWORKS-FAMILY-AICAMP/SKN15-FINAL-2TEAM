@@ -252,6 +252,10 @@ EOF
 deploy_backend() {
     print_step "Backend 인스턴스 배포 중..."
 
+    # Airflow scripts를 Backend로 복사
+    print_step "날씨 크롤러 스크립트 복사 중..."
+    cp -r ./airflow/scripts ./backend/ 2>/dev/null || true
+
     # docker-compose.backend.yml 생성
     cat > docker-compose.backend.yml <<'EOF'
 services:

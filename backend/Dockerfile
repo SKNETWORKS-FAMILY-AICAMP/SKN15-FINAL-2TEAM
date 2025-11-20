@@ -26,7 +26,7 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # 정적 파일 및 미디어 디렉토리 생성
-RUN mkdir -p staticfiles media exports
+RUN mkdir -p staticfiles media exports scripts
 
 # 포트 노출
 EXPOSE 8000
