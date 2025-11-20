@@ -145,11 +145,19 @@ def read_youtube_urls(file_path: str):
         if not lines:
             return urls_data
 
-        # 첫 번째 줄이 지역명
-        location = lines[0]
+        # 첫 번째 줄이 지역명 (URL이 아니어야 함)
+        first_line = lines[0]
+        if 'youtube.com' in first_line or 'youtu.be' in first_line:
+            # 첫 줄이 URL이면 지역명 없음
+            location = "미지정"
+            start_index = 0
+        else:
+            # 첫 줄이 지역명
+            location = first_line
+            start_index = 1
 
-        # 나머지 줄에서 YouTube URL 추출
-        for line in lines[1:]:
+        # URL 추출
+        for line in lines[start_index:]:
             # YouTube URL인지 확인
             if 'youtube.com' in line or 'youtu.be' in line:
                 url_match = re.search(r'(https?://[^\s]+)', line)

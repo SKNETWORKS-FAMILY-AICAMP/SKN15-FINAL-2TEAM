@@ -2771,7 +2771,7 @@ export default function Planner() {
       />
 
       {/* 추천 장소 하단 패널 */}
-      {recommendationPanelVisible && (
+      {recommendationPanelVisible && recommendationDetails.length > 0 && (
         <Box
           sx={{
             position: 'fixed',
