@@ -407,27 +407,75 @@ deploy_airflow() {
 
     # docker-compose.airflow.yml 생성
     cat > docker-compose.airflow.yml <<'EOF'
+version: '3.8'
 
 services:
-  airflow:
+  # Airflow Postgres (Airflow 메타데이터용)
+  airflow-postgres:
+    image: postgres:15-alpine
+    container_name: triplan-airflow-db
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD:-airflow}
+    volumes:
+      - ./data/airflow-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # Airflow Webserver
+  airflow-webserver:
     build:
       context: ./airflow
       dockerfile: Dockerfile
-    container_name: triplan-airflow
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
+    container_name: triplan-airflow-webserver
+    command: webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
+      - AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
+      - AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
+      - MAIN_DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./data/airflow-data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - airflow-postgres
+    restart: unless-stopped
+    networks:
+      - triplan-network
+
+  # Airflow Scheduler
+  airflow-scheduler:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: triplan-airflow-scheduler
+    command: scheduler
     environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
-      - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
-    user: "50000:0"
-    restart: always
+      - MAIN_DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./data/airflow-data:/opt/airflow/data
+    depends_on:
+      - airflow-postgres
+    restart: unless-stopped
     networks:
       - triplan-network
 
@@ -448,11 +496,11 @@ EOF
     print_step "Airflow 초기화 중..."
 
     # DB 초기화
-    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow airflow db init 2>/dev/null || \
+    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow-webserver airflow db init 2>/dev/null || \
         print_warning "Airflow DB는 이미 초기화되어 있습니다."
 
     # Admin 사용자 생성 (이미 존재하면 스킵)
-    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow airflow users create \
+    sudo docker-compose -f docker-compose.airflow.yml exec -T airflow-webserver airflow users create \
         --username ${AIRFLOW_USERNAME:-admin} \
         --password ${AIRFLOW_PASSWORD:-admin} \
         --firstname Admin \
