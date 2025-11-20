@@ -12,10 +12,13 @@ import os
 import time
 
 # Django 설정
-# Airflow 컨테이너에서 실행될 경우를 위한 경로 설정
-backend_path = os.environ.get('BACKEND_PATH', '/opt/airflow/backend')
-if os.path.exists(backend_path):
-    sys.path.insert(0, backend_path)
+# 실행 환경에 따른 경로 설정
+if os.path.exists('/app/config'):
+    # Backend 컨테이너 환경
+    sys.path.insert(0, '/app')
+elif os.path.exists('/opt/airflow/backend'):
+    # Airflow 컨테이너 환경
+    sys.path.insert(0, '/opt/airflow/backend')
 else:
     # 로컬 환경
     sys.path.append('/home/pjw/workspace/SKN15-FINAL-2TEAM/backend')
