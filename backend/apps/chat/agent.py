@@ -1319,7 +1319,7 @@ class TravelPlannerAgent:
                 rag = get_rag()
                 rag_results = rag.search_similar_trips(
                     query=query,
-                    country_code=trip.country_idx.country_code if trip.country_idx else None,
+                    country_code=trip.country_idx.pk if trip.country_idx else None,
                     province_idx=trip.province_idx.province_idx if trip.province_idx else None,
                     limit=top_k
                 )
@@ -1425,14 +1425,24 @@ JSON만 출력하세요. 설명이나 다른 텍스트는 금지입니다.
 
                                 # 🆕 지역명이 있으면 장소명 앞에 붙여서 검색 (더 정확한 위치 검색)
                                 search_query = f"{region_name} {place_name}" if region_name else place_name
-                                params = {"query": search_query, "size": 1}
+                                params = {"query": search_query, "size": 5}  # 여러 결과 가져와서 필터링
                                 logger.info(f"🔍 Kakao API 검색: '{search_query}'")
 
                                 response = requests.get(url, headers=headers, params=params, timeout=5)
                                 data = response.json()
 
                                 if data.get('documents'):
-                                    place_data = data['documents'][0]
+                                    # 지역 필터링: region_name이 주소에 포함된 결과만 선택
+                                    filtered_results = data['documents']
+                                    if region_name:
+                                        filtered_results = [
+                                            doc for doc in data['documents']
+                                            if region_name in (doc.get('address_name', '') + doc.get('road_address_name', ''))
+                                        ]
+
+                                    # 필터링된 결과가 있으면 첫 번째, 없으면 원본 첫 번째
+                                    place_data = filtered_results[0] if filtered_results else data['documents'][0]
+
                                     kakao_data = {
                                         'verified_name': place_data['place_name'],
                                         'address': place_data.get('road_address_name') or place_data.get('address_name'),
@@ -1440,6 +1450,10 @@ JSON만 출력하세요. 설명이나 다른 텍스트는 금지입니다.
                                         'longitude': float(place_data.get('x', 0)) if place_data.get('x') else None,
                                         'category': place_data.get('category_name', ''),
                                     }
+
+                                    # 지역 검증 로그
+                                    if region_name and region_name not in kakao_data.get('address', ''):
+                                        logger.warning(f"⚠️ 지역 불일치: '{place_name}' → {kakao_data.get('address')} (expected: {region_name})")
                             except Exception as kakao_error:
                                 logger.warning(f"⚠️ Kakao search failed for '{place_name}': {kakao_error}")
 

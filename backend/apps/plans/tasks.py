@@ -336,23 +336,26 @@ def match_location(location_name: str) -> Dict[str, Optional[int]]:
     result = {'province_idx': None, 'city_idx': None, 'district_idx': None}
 
     try:
-        province = Province.objects.filter(province_name__icontains=location_name).first()
+        # Province 검색 (name 필드 사용)
+        province = Province.objects.filter(name__icontains=location_name).first()
         if province:
             result['province_idx'] = province.province_idx
             return result
 
-        city = City.objects.filter(city_name__icontains=location_name).first()
+        # City 검색 (name 필드 사용)
+        city = City.objects.filter(name__icontains=location_name).first()
         if city:
             result['city_idx'] = city.city_idx
-            result['province_idx'] = city.province_idx.province_idx if city.province_idx else None
+            result['province_idx'] = city.province.province_idx if city.province else None
             return result
 
-        district = District.objects.filter(district_name__icontains=location_name).first()
+        # District 검색 (name 필드 사용)
+        district = District.objects.filter(name__icontains=location_name).first()
         if district:
             result['district_idx'] = district.district_idx
-            result['city_idx'] = district.city_idx.city_idx if district.city_idx else None
-            if district.city_idx and district.city_idx.province_idx:
-                result['province_idx'] = district.city_idx.province_idx.province_idx
+            result['city_idx'] = district.city.city_idx if district.city else None
+            if district.city and district.city.province:
+                result['province_idx'] = district.city.province.province_idx
             return result
 
     except Exception as e:
@@ -427,6 +430,10 @@ def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, 
         upload_year = upload_date.year if upload_date else None
         upload_month = upload_date.month if upload_date else None
 
+        # 한국 Country 가져오기
+        from apps.common.models import Country
+        korea = Country.objects.filter(iso2='KR').first()
+
         # TripCourseEmbedding 저장 (3개 필드 모두 저장)
         embedding_obj = TripCourseEmbedding.objects.create(
             video_id=video_id,
@@ -439,9 +446,10 @@ def save_to_database(parsed_data: Dict, location_match: Dict, video_info: Dict, 
             raw_content=raw_content,              # 1. 원문
             parsed_itinerary=parsed_data,         # 2. 파싱된 여행 경로
             content_embedding=embedding_vector,   # 3. 임베딩 벡터
-            province_idx=location_match.get('province_idx'),
-            city_idx=location_match.get('city_idx'),
-            district_idx=location_match.get('district_idx')
+            country_code=korea,                   # 한국으로 설정
+            province_idx_id=location_match.get('province_idx'),
+            city_idx_id=location_match.get('city_idx'),
+            district_idx_id=location_match.get('district_idx')
         )
 
         logger.info(f"RAG 데이터 저장 완료: {embedding_obj.id} (원문 {len(raw_content)}자, 장소 {len(parsed_data.get('places', []))}개)")
