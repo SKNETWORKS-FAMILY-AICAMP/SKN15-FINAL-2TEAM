@@ -443,6 +443,12 @@ services:
       - PYTHONPATH=/opt/airflow/backend:\$PYTHONPATH
       - DJANGO_SETTINGS_MODULE=config.settings
       - BACKEND_PATH=/opt/airflow/backend
+      - DATABASE_URL=${DATABASE_URL}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -474,6 +480,12 @@ services:
       - PYTHONPATH=/opt/airflow/backend:\$PYTHONPATH
       - DJANGO_SETTINGS_MODULE=config.settings
       - BACKEND_PATH=/opt/airflow/backend
+      - DATABASE_URL=${DATABASE_URL}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
