@@ -133,6 +133,81 @@ RAG (Retrieval-Augmented Generation) 시스템의 전체 파이프라인을 다�
 
 ---
 
+### 5. [발표 대비 Q&A](05_PRESENTATION_QNA.md)
+**모든 기술 선택 이유 및 예상 질문 완벽 정리**
+
+발표 시 예상되는 모든 질문과 답변을 10개 카테고리로 정리한 완벽 가이드입니다.
+
+**주요 내용**:
+- **의도 분류 시스템**
+  - 왜 사후 역추론 방식을 사용하는가?
+  - 5가지 의도 유형 설명
+  - 17개 툴 매핑 전략
+  - 확장성 및 유지보수
+
+- **가드레일 에이전트**
+  - 29개 공격 패턴 탐지
+  - 7가지 보안 기능
+  - 실제 차단 예시 (프롬프트 인젝션, SQL 인젝션 등)
+  - False Positive 최소화 전략
+
+- **RAG 시스템**
+  - pgvector 선택 이유
+  - HNSW 인덱스 최적화
+  - 92% 정확도 달성 과정
+  - YouTube 데이터 크롤링
+
+- **WebSocket & 실시간 동기화**
+  - Django Channels 아키텍처
+  - Redis Channel Layer 역할
+  - 재연결 로직 (exponential backoff)
+  - 플래너 실시간 동기화 메커니즘
+
+- **성능 최적화**
+  - 병목 구간 식별 (RAG 800ms→200ms)
+  - DB 쿼리 최적화 (N+1 문제 해결)
+  - 3단계 캐싱 전략
+  - 프론트엔드 최적화 (번들 2.5MB→1.1MB)
+
+- **인프라 & 배포**
+  - Docker Compose vs Kubernetes 선택 이유
+  - 7-Container 아키텍처
+  - AWS 배포 구조
+  - 환경 변수 관리 (AWS Systems Manager)
+
+- **보안**
+  - JWT 인증 (Access/Refresh Token)
+  - CORS 설정
+  - XSS/SQL Injection 방어
+  - API Rate Limiting
+
+- **데이터베이스 설계**
+  - 6개 핵심 도메인 구조
+  - invite_code 충돌 방지 (36^6 = 21억 경우의 수)
+  - order_in_day 순서 관리
+  - 트랜잭션 처리 (atomic)
+
+- **프론트엔드 아키텍처**
+  - Next.js vs CRA 선택 이유
+  - React Query + Context API 상태 관리
+  - Kakao Maps 통합
+  - 5가지 성능 최적화 기법
+
+- **트러블슈팅 사례**
+  - WebSocket 연결 끊김 해결
+  - RAG 정확도 60%→92% 개선 과정
+  - 성능 병목 해결 (RAG 2.7배 향상)
+  - 프로덕션 배포 시 환경 변수 누락 해결
+
+**발표 팁**:
+- 답변 구조 (결론→이유→코드→결과)
+- 강조할 포인트 5가지
+- 피해야 할 것 3가지
+
+**이 문서 하나로 발표 완벽 대비! 🎉**
+
+---
+
 ## 🚀 빠른 시작
 
 ### 로컬 개발 환경

@@ -450,7 +450,7 @@ JSON 배열로 응답해주세요.
             logger.error(f"❌ GPT-4 recommendation generation failed: {e}")
             return []
 
-    def recommend_by_current_trip(
+    def recommend_by_current_trip( 
         self,
         trip_title: str,
         country_code: Optional[int] = None,

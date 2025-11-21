@@ -17,6 +17,8 @@ INSERT INTO public.trip_course_embeddings (video_id,title,channel,url,upload_yea
 
 
 
+
+
 🏡 타임라인
 
 0:00 미리보기

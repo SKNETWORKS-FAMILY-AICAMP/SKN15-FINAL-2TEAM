@@ -3,10 +3,7 @@ Travel Planner Agent System Prompt - Version 1
 여행 플래너 에이전트 시스템 프롬프트 - 버전 1
 
 History:
-- v1 (2025-01-05): Initial version with RAG support
-- v1.1 (2025-01-05): Use dynamic current year instead of hardcoded 2025
-- v1.2 (2025-01-07): Enhanced place addition workflow with mandatory search_place before add_place_to_day
-- v1.3 (2025-01-07): Added search_on_map_and_add unified tool (map search + auto add)
+- v1 (2025-11-14): Initial version with RAG support
 """
 
 from datetime import datetime
